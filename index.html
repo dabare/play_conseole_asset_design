@@ -1,0 +1,4763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Play Console Creative Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+  :root {
+    --bg: #edf2f4;
+    --panel: rgba(255, 255, 255, 0.88);
+    --panel-strong: #ffffff;
+    --ink: #14213d;
+    --ink-soft: #4f5d75;
+    --line: #dce3ea;
+    --accent: #0077b6;
+    --accent-2: #f77f00;
+    --ok: #2a9d8f;
+    --warn: #ef6c00;
+    --err: #d62828;
+    --radius: 16px;
+    --shadow: 0 18px 42px rgba(20, 33, 61, 0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: "Manrope", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(0, 119, 182, 0.16), transparent 34%),
+      radial-gradient(circle at 84% 14%, rgba(247, 127, 0, 0.16), transparent 34%),
+      linear-gradient(180deg, #f8fafc 0%, #edf2f4 64%, #e4ebf1 100%);
+    min-height: 100vh;
+  }
+
+  .app-shell {
+    max-width: 1540px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .app-header {
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background:
+      linear-gradient(130deg, rgba(0, 119, 182, 0.09), rgba(247, 127, 0, 0.07)),
+      var(--panel);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    animation: riseIn 380ms ease;
+  }
+
+  .title-wrap h1 {
+    font-family: "Sora", sans-serif;
+    letter-spacing: -0.02em;
+    font-size: clamp(1.3rem, 2vw, 2rem);
+  }
+
+  .title-wrap p {
+    color: var(--ink-soft);
+    margin-top: 6px;
+    font-size: 0.94rem;
+    line-height: 1.4;
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 180ms ease;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .btn-primary {
+    color: #ffffff;
+    background: linear-gradient(120deg, var(--accent), #0096c7);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .btn-soft {
+    color: var(--ink);
+    background: #ffffff;
+    border-color: var(--line);
+  }
+
+  .btn-soft:hover {
+    border-color: #bcc7d1;
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    color: var(--ink-soft);
+    background: transparent;
+    border-color: var(--line);
+  }
+
+  .btn-ghost:hover {
+    color: var(--ink);
+    border-color: #bcc7d1;
+  }
+
+  .workspace {
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: var(--shadow);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(6px);
+  }
+
+  .tab-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.75);
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .tab-btn {
+    border-radius: 999px;
+    border: 1px solid #d2dce5;
+    background: #ffffff;
+    color: #17324f;
+    padding: 9px 14px;
+    white-space: nowrap;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    transition: 180ms ease;
+  }
+
+  .tab-btn .meta {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: #e9f4fb;
+    color: #0b5a7a;
+    font-weight: 700;
+  }
+
+  .tab-btn.active {
+    border-color: transparent;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0077b6, #00a6c8);
+  }
+
+  .tab-btn.active .meta {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 500px) minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+    min-height: calc(100vh - 190px);
+  }
+
+  .panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--panel-strong);
+    border: 1px solid #dce3ea;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 22px rgba(20, 33, 61, 0.06);
+    padding: 14px;
+    animation: riseIn 260ms ease;
+  }
+
+  .card h2 {
+    font-family: "Sora", sans-serif;
+    font-size: 0.98rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  .compact-controls-card {
+    padding: 10px;
+  }
+
+  .compact-controls-card h2 {
+    margin-bottom: 6px;
+  }
+
+  .accordion-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panel-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .panel-accordion > .control-section {
+    box-shadow: 0 10px 22px rgba(20, 33, 61, 0.06);
+  }
+
+  .panel-accordion > .control-section > summary {
+    padding: 10px 12px;
+    font-size: 0.86rem;
+  }
+
+  .compact-controls-shell {
+    padding: 8px;
+    background: #f8fbff;
+    border-radius: 10px;
+  }
+
+  .control-section {
+    border: 1px solid #dce3ea;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+
+  .control-section > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 12px;
+    font-family: "Sora", sans-serif;
+    font-size: 0.84rem;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #1a3b57;
+    background: #f7fbff;
+    border-bottom: 1px solid transparent;
+    user-select: none;
+  }
+
+  .control-section > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .control-section > summary::after {
+    content: "▾";
+    font-size: 0.78rem;
+    color: #486884;
+    transition: transform 160ms ease;
+  }
+
+  .control-section[open] > summary {
+    border-bottom-color: #e1eaf2;
+    background: #eef7fd;
+  }
+
+  .control-section[open] > summary::after {
+    transform: rotate(180deg);
+  }
+
+  .control-section .section-body {
+    padding: 9px 10px 10px;
+  }
+
+  .compact-field-grid {
+    gap: 8px;
+  }
+
+  .compact-field-grid .field label {
+    font-size: 0.69rem;
+    letter-spacing: 0.045em;
+  }
+
+  .compact-field-grid .field input,
+  .compact-field-grid .field select,
+  .compact-field-grid .field textarea {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+  }
+
+  .compact-field-grid .field textarea {
+    min-height: 68px;
+  }
+
+  .compact-field-grid .toggle {
+    font-size: 0.78rem;
+  }
+
+  .help-text {
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .spec-pill-grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .spec-pill {
+    border: 1px solid #dce3ea;
+    background: #f7fbfe;
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+
+  .spec-pill b {
+    font-size: 0.75rem;
+    color: #0a4f6a;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  .spec-pill span {
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .upload-dropzone {
+    border: 2px dashed #adc4d6;
+    background: linear-gradient(145deg, #f8fcff, #eef7fd);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: 180ms ease;
+  }
+
+  .upload-dropzone.dragover {
+    border-color: var(--accent);
+    background: #e6f4fb;
+  }
+
+  .upload-dropzone strong {
+    font-size: 0.95rem;
+  }
+
+  .upload-dropzone small {
+    display: block;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  .upload-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .action-cluster {
+    border: 1px solid #dce3ea;
+    background: #f9fcff;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-cluster-title {
+    font-size: 0.73rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #35546f;
+    text-transform: uppercase;
+  }
+
+  .quick-row {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  .quick-row .btn {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    border-radius: 10px;
+  }
+
+  .asset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .asset-row {
+    border: 1px solid #dce3ea;
+    border-radius: 12px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 160ms ease;
+  }
+
+  .asset-row.selected {
+    border-color: #4aa7d4;
+    background: #eef8fe;
+  }
+
+  .asset-row.invalid {
+    border-color: #f5b7b1;
+    background: #fff5f4;
+  }
+
+  .asset-row img {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #dce3ea;
+    background: #f6f7f9;
+  }
+
+  .asset-row .meta {
+    min-width: 0;
+  }
+
+  .asset-row .meta strong {
+    display: block;
+    font-size: 0.86rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .asset-row .meta span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+
+  .row-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid #dce3ea;
+    color: var(--ink-soft);
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: 160ms ease;
+  }
+
+  .icon-btn:hover {
+    border-color: #b3c4d3;
+    color: var(--ink);
+  }
+
+  .icon-btn.danger {
+    color: #b42318;
+    border-color: #f2c1bc;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field.full {
+    grid-column: 1 / -1;
+  }
+
+  .field label {
+    font-size: 0.78rem;
+    color: #3f5570;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    border: 1px solid #d6e0e8;
+    background: #fefefe;
+    border-radius: 10px;
+    min-height: 38px;
+    padding: 8px 10px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: #4ba8d6;
+  }
+
+  .field textarea {
+    min-height: 84px;
+    resize: vertical;
+    line-height: 1.4;
+  }
+
+  .counter {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.72rem;
+    color: #5f748c;
+  }
+
+  .counter.over {
+    color: var(--err);
+    font-weight: 700;
+  }
+
+  .alignment-row,
+  .frame-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    border: 1px solid #cfdae3;
+    background: #ffffff;
+    color: #395a75;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .chip.active {
+    background: #1277a8;
+    border-color: #1277a8;
+    color: #ffffff;
+  }
+
+  .range-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .range-row input[type="range"] {
+    width: 100%;
+    accent-color: #0a86be;
+  }
+
+  .range-row output {
+    color: #35556f;
+    font-size: 0.82rem;
+    font-weight: 700;
+    min-width: 46px;
+    text-align: right;
+  }
+
+  .toggle {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.84rem;
+    color: #3d556f;
+  }
+
+  .decoration-toolbar {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  .decoration-toolbar .chip {
+    font-size: 0.72rem;
+    padding: 6px 9px;
+  }
+
+  .decoration-toolbar.icons .chip {
+    border-style: dashed;
+  }
+
+  .btn-danger-soft {
+    color: #9f1239;
+    border-color: #f8c7d8;
+    background: #fff0f6;
+  }
+
+  .btn-danger-soft:hover {
+    border-color: #f29fbc;
+    color: #881337;
+  }
+
+  .layer-select {
+    min-height: 92px;
+    border: 1px solid #d6e0e8;
+    border-radius: 10px;
+    padding: 6px;
+    font-family: inherit;
+    font-size: 0.84rem;
+    color: var(--ink);
+    background: #ffffff;
+  }
+
+  .preview-card {
+    min-height: 430px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .canvas-shell {
+    flex: 1;
+    border: 1px solid #d6e0e8;
+    border-radius: 14px;
+    background:
+      linear-gradient(45deg, #f2f4f6 25%, transparent 25%),
+      linear-gradient(-45deg, #f2f4f6 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #f2f4f6 75%),
+      linear-gradient(-45deg, transparent 75%, #f2f4f6 75%);
+    background-size: 26px 26px;
+    background-position: 0 0, 0 13px, 13px -13px, -13px 0;
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    position: relative;
+  }
+
+  canvas {
+    max-width: 100%;
+    max-height: min(66vh, 680px);
+    border-radius: 12px;
+    box-shadow: 0 20px 36px rgba(10, 20, 34, 0.22);
+    background: #ffffff;
+    touch-action: none;
+  }
+
+  .empty-preview {
+    text-align: center;
+    color: #6a7c8f;
+    font-size: 0.93rem;
+    max-width: 320px;
+    line-height: 1.5;
+    padding: 16px;
+  }
+
+  .validation-list,
+  .coverage-list,
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .status-row {
+    border-radius: 10px;
+    padding: 9px 10px;
+    border: 1px solid #dce3ea;
+    background: #f7fafc;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .status-row.ok {
+    border-color: #9fd5cc;
+    background: #ecf9f7;
+    color: #14564f;
+  }
+
+  .status-row.warn {
+    border-color: #ffd5a6;
+    background: #fff7ec;
+    color: #9a4200;
+  }
+
+  .status-row.err {
+    border-color: #f4b5af;
+    background: #fff3f2;
+    color: #9c1f1f;
+  }
+
+  .coverage-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    border: 1px solid #dce3ea;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 9px 10px;
+  }
+
+  .coverage-row strong {
+    display: block;
+    font-size: 0.86rem;
+  }
+
+  .coverage-row span {
+    font-size: 0.76rem;
+    color: #576c83;
+  }
+
+  .coverage-row .pill {
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .pill.ok {
+    color: #125a53;
+    background: #d8f3ee;
+  }
+
+  .pill.warn {
+    color: #9a4200;
+    background: #ffe8cc;
+  }
+
+  .pill.err {
+    color: #8a1f17;
+    background: #ffd9d6;
+  }
+
+  .metadata-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .metadata-preview {
+    border: 1px solid #dce3ea;
+    border-radius: 12px;
+    padding: 12px;
+    background: #f8fbfd;
+  }
+
+  .metadata-preview h3 {
+    font-family: "Sora", sans-serif;
+    font-size: 1.02rem;
+    margin-bottom: 4px;
+  }
+
+  .metadata-preview p {
+    color: #4c6178;
+    font-size: 0.87rem;
+    line-height: 1.45;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  @keyframes riseIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 1160px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+      min-height: unset;
+    }
+
+    .preview-card {
+      min-height: 360px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .app-shell {
+      padding: 12px;
+    }
+
+    .app-header {
+      padding: 14px;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .field-grid,
+    .spec-pill-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .asset-row {
+      grid-template-columns: 58px minmax(0, 1fr) auto;
+    }
+
+    .asset-row img {
+      width: 58px;
+      height: 58px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="title-wrap">
+      <h1>Play Console Creative Studio</h1>
+      <p>Create and validate all Play Store listing graphics in one place with reusable style presets, asset policy checks, and JSON project workflows.</p>
+    </div>
+    <div class="header-actions">
+      <label class="btn btn-soft" for="projectImportInput">Import JSON</label>
+      <input id="projectImportInput" type="file" accept="application/json" class="hidden">
+      <button class="btn btn-primary" id="projectExportBtn" type="button">Export Project JSON</button>
+      <button class="btn btn-soft" id="manifestBtn" type="button">Export Manifest JSON</button>
+      <button class="btn btn-danger-soft" id="newProjectBtn" type="button">New Project</button>
+    </div>
+  </header>
+
+  <section class="workspace">
+    <nav class="tab-strip" id="tabStrip"></nav>
+
+    <div class="content-grid">
+      <section class="panel" id="leftPanel">
+        <div id="assetWorkspace" class="panel">
+          <article class="card" id="specCard"></article>
+
+          <div class="panel-accordion" id="assetAccordion" data-accordion="single">
+            <details class="control-section" id="uploadSection" data-remember-open>
+              <summary>Upload Assets</summary>
+              <div class="section-body">
+                <p class="help-text" id="uploadHelp"></p>
+                <div class="upload-dropzone" id="uploadDropzone" tabindex="0">
+                  <strong>Drop images here or click to browse</strong>
+                  <small id="dropzoneCaption"></small>
+                </div>
+                <input id="assetInput" type="file" accept="image/png,image/jpeg" multiple class="hidden">
+                <div class="upload-actions">
+                  <button class="btn btn-soft" id="browseAssetsBtn" type="button">Browse Files</button>
+                  <button class="btn btn-danger-soft" id="clearTabBtn" type="button">Clear Current Tab</button>
+                </div>
+              </div>
+            </details>
+
+            <details class="control-section" id="queueSection" data-remember-open>
+              <summary>Asset Queue</summary>
+              <div class="section-body">
+                <p class="help-text" id="queueStatus"></p>
+                <div id="assetList" class="asset-list"></div>
+              </div>
+            </details>
+
+            <details class="control-section" id="artworkSection" data-remember-open open>
+              <summary>Artwork Controls</summary>
+              <div class="section-body compact-controls-card compact-controls-shell">
+                <div id="artworkAccordion" class="accordion-stack" data-accordion="single">
+                  <details class="control-section" id="creativeBasicsSection" data-remember-open open>
+                    <summary>Creative Basics</summary>
+                    <div class="section-body">
+                      <div class="field-grid compact-field-grid">
+                        <div class="field">
+                          <label for="stylePreset">Style Preset</label>
+                          <select id="stylePreset">
+                            <option value="launch">Launch Pulse</option>
+                            <option value="clean">Clean Commerce</option>
+                            <option value="editorial">Editorial Prime</option>
+                          </select>
+                        </div>
+                        <div class="field">
+                          <label for="bgStyle">Background Style</label>
+                          <select id="bgStyle">
+                            <option value="gradient">Gradient Blend</option>
+                            <option value="radial">Radial Glow</option>
+                            <option value="solid">Solid Tone</option>
+                          </select>
+                        </div>
+
+                        <div class="field">
+                          <label for="bgColor1">Background Color A</label>
+                          <input id="bgColor1" type="color" value="#0b7285">
+                        </div>
+                        <div class="field">
+                          <label for="bgColor2">Background Color B</label>
+                          <input id="bgColor2" type="color" value="#f08c00">
+                        </div>
+
+                        <div class="field full">
+                          <label for="titleText">Headline</label>
+                          <input id="titleText" type="text" placeholder="Example: Build Better Habits Faster">
+                        </div>
+                        <div class="field full">
+                          <label for="subtitleText">Subheadline</label>
+                          <input id="subtitleText" type="text" placeholder="Example: Track streaks, goals, and milestones in one app">
+                        </div>
+                        <div class="field full">
+                          <label for="badgeText">Badge</label>
+                          <input id="badgeText" type="text" placeholder="Example: New in v3.2">
+                        </div>
+
+                        <div class="field">
+                          <label for="textColor">Title Color</label>
+                          <input id="textColor" type="color" value="#ffffff">
+                        </div>
+                        <div class="field">
+                          <label for="subtitleColor">Subtitle Color</label>
+                          <input id="subtitleColor" type="color" value="#e6f4f1">
+                        </div>
+                        <div class="field">
+                          <label for="badgeColor">Badge Color</label>
+                          <input id="badgeColor" type="color" value="#ffe8cc">
+                        </div>
+
+                        <div class="field full">
+                          <label>Text Alignment</label>
+                          <div class="alignment-row" id="alignRow">
+                            <button class="chip" data-align="left" type="button">Left</button>
+                            <button class="chip active" data-align="center" type="button">Center</button>
+                            <button class="chip" data-align="right" type="button">Right</button>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label>Frame Style</label>
+                          <div class="frame-row" id="frameRow">
+                            <button class="chip active" data-frame="device" type="button">Device</button>
+                            <button class="chip" data-frame="floating" type="button">Floating</button>
+                            <button class="chip" data-frame="raw" type="button">Raw</button>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label for="scaleRange">Media Scale</label>
+                          <div class="range-row">
+                            <input id="scaleRange" type="range" min="65" max="100" value="92">
+                            <output id="scaleOutput">92%</output>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label for="shadowRange">Shadow Strength</label>
+                          <div class="range-row">
+                            <input id="shadowRange" type="range" min="0" max="80" value="42">
+                            <output id="shadowOutput">42%</output>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label for="radiusRange">Corner Radius</label>
+                          <div class="range-row">
+                            <input id="radiusRange" type="range" min="0" max="80" value="28">
+                            <output id="radiusOutput">28px</output>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label class="toggle" for="safeAreaToggle">
+                            <input id="safeAreaToggle" type="checkbox" checked>
+                            Show safe-area guide overlay
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  <details class="control-section" id="layerBuilderSection" data-remember-open>
+                    <summary>Layer Builder</summary>
+                    <div class="section-body">
+                      <div class="field-grid compact-field-grid">
+                        <div class="field full">
+                          <label>Layer Library</label>
+                          <div class="action-cluster">
+                            <div class="action-cluster-title">Shapes</div>
+                            <div class="decoration-toolbar">
+                              <button class="chip" id="addRectShapeBtn" type="button">+ Rect</button>
+                              <button class="chip" id="addCircleShapeBtn" type="button">+ Circle</button>
+                              <button class="chip" id="addTriangleShapeBtn" type="button">+ Triangle</button>
+                              <button class="chip" id="addStarShapeBtn" type="button">+ Star</button>
+                              <button class="chip" id="addDiamondShapeBtn" type="button">+ Diamond</button>
+                              <button class="chip" id="addHexShapeBtn" type="button">+ Hexagon</button>
+                            </div>
+                            <div class="action-cluster-title">Icons</div>
+                            <div class="decoration-toolbar icons">
+                              <button class="chip" id="addHeartIconBtn" type="button">+ Heart</button>
+                              <button class="chip" id="addPlusIconBtn" type="button">+ Plus</button>
+                              <button class="chip" id="addBoltIconBtn" type="button">+ Bolt</button>
+                              <button class="chip" id="addCheckIconBtn" type="button">+ Check</button>
+                              <button class="chip" id="addPlayIconBtn" type="button">+ Play</button>
+                            </div>
+                            <p class="help-text">Add a layer, select it from stack, then adjust style and position.</p>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label for="shapeLayerSelect">Layer Stack</label>
+                          <select id="shapeLayerSelect" class="layer-select"></select>
+                        </div>
+
+                        <div class="field full">
+                          <div class="action-cluster">
+                            <div class="action-cluster-title">Layer Order</div>
+                            <div class="quick-row">
+                              <button class="btn btn-soft" id="shapeMoveTopBtn" type="button">Top</button>
+                              <button class="btn btn-soft" id="shapeBringForwardBtn" type="button">Up</button>
+                              <button class="btn btn-soft" id="shapeSendBackwardBtn" type="button">Down</button>
+                              <button class="btn btn-soft" id="shapeMoveBottomBtn" type="button">Bottom</button>
+                            </div>
+                            <div class="quick-row">
+                              <button class="btn btn-soft" id="duplicateShapeBtn" type="button">Duplicate</button>
+                              <button class="btn btn-soft" id="duplicateLayerToTabBtn" type="button">Copy To Tab</button>
+                              <button class="btn btn-ghost" id="removeShapeBtn" type="button">Delete</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeKindSelect">Layer Type</label>
+                          <select id="shapeKindSelect">
+                            <option value="rect">Rectangle</option>
+                            <option value="circle">Circle</option>
+                            <option value="triangle">Triangle</option>
+                            <option value="star">Star</option>
+                            <option value="diamond">Diamond</option>
+                            <option value="hexagon">Hexagon</option>
+                            <option value="heart">Heart</option>
+                            <option value="plus">Plus</option>
+                            <option value="bolt">Bolt</option>
+                            <option value="check">Check</option>
+                            <option value="play">Play</option>
+                          </select>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeBlendModeSelect">Blend Mode</label>
+                          <select id="shapeBlendModeSelect">
+                            <option value="source-over">Normal</option>
+                            <option value="screen">Screen</option>
+                            <option value="multiply">Multiply</option>
+                            <option value="overlay">Overlay</option>
+                            <option value="lighten">Lighten</option>
+                            <option value="darken">Darken</option>
+                          </select>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeXRange">X Position</label>
+                          <div class="range-row">
+                            <input id="shapeXRange" type="range" min="0" max="100" value="50">
+                            <output id="shapeXOutput">50%</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeYRange">Y Position</label>
+                          <div class="range-row">
+                            <input id="shapeYRange" type="range" min="0" max="100" value="50">
+                            <output id="shapeYOutput">50%</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeSizeRange">Layer Size</label>
+                          <div class="range-row">
+                            <input id="shapeSizeRange" type="range" min="4" max="48" value="14">
+                            <output id="shapeSizeOutput">14%</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeRotateRange">Rotation</label>
+                          <div class="range-row">
+                            <input id="shapeRotateRange" type="range" min="0" max="360" value="0">
+                            <output id="shapeRotateOutput">0deg</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeOpacityRange">Opacity</label>
+                          <div class="range-row">
+                            <input id="shapeOpacityRange" type="range" min="10" max="100" value="92">
+                            <output id="shapeOpacityOutput">92%</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeStrokeRange">Stroke Width</label>
+                          <div class="range-row">
+                            <input id="shapeStrokeRange" type="range" min="0" max="24" value="0">
+                            <output id="shapeStrokeOutput">0px</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeLayerShadowRange">Layer Shadow</label>
+                          <div class="range-row">
+                            <input id="shapeLayerShadowRange" type="range" min="0" max="100" value="0">
+                            <output id="shapeLayerShadowOutput">0%</output>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeFillColor">Fill</label>
+                          <input id="shapeFillColor" type="color" value="#ffffff">
+                        </div>
+
+                        <div class="field">
+                          <label for="shapeStrokeColor">Stroke</label>
+                          <input id="shapeStrokeColor" type="color" value="#102a43">
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  <details class="control-section" id="layerToolsSection" data-remember-open>
+                    <summary>Layer Tools</summary>
+                    <div class="section-body">
+                      <div class="field-grid compact-field-grid">
+                        <div class="field full">
+                          <div class="action-cluster">
+                            <div class="action-cluster-title">Layer State</div>
+                            <div class="quick-row">
+                              <label class="toggle" for="shapeVisibleToggle">
+                                <input id="shapeVisibleToggle" type="checkbox" checked>
+                                Visible
+                              </label>
+                              <label class="toggle" for="shapeLockedToggle">
+                                <input id="shapeLockedToggle" type="checkbox">
+                                Lock Drag
+                              </label>
+                              <label class="toggle" for="shapeFlipXToggle">
+                                <input id="shapeFlipXToggle" type="checkbox">
+                                Flip X
+                              </label>
+                              <label class="toggle" for="shapeFlipYToggle">
+                                <input id="shapeFlipYToggle" type="checkbox">
+                                Flip Y
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <div class="action-cluster">
+                            <div class="action-cluster-title">Position Helpers</div>
+                            <div class="quick-row">
+                              <button class="btn btn-soft" id="shapeAlignLeftBtn" type="button">Align Left</button>
+                              <button class="btn btn-soft" id="shapeAlignCenterBtn" type="button">Align Center</button>
+                              <button class="btn btn-soft" id="shapeAlignRightBtn" type="button">Align Right</button>
+                              <button class="btn btn-soft" id="shapeAlignTopBtn" type="button">Align Top</button>
+                              <button class="btn btn-soft" id="shapeAlignMiddleBtn" type="button">Align Middle</button>
+                              <button class="btn btn-soft" id="shapeAlignBottomBtn" type="button">Align Bottom</button>
+                            </div>
+                            <div class="quick-row">
+                              <button class="btn btn-soft" id="shapeNudgeLeftBtn" type="button">Nudge ◀</button>
+                              <button class="btn btn-soft" id="shapeNudgeRightBtn" type="button">Nudge ▶</button>
+                              <button class="btn btn-soft" id="shapeNudgeUpBtn" type="button">Nudge ▲</button>
+                              <button class="btn btn-soft" id="shapeNudgeDownBtn" type="button">Nudge ▼</button>
+                              <button class="btn btn-soft" id="shapeRandomColorBtn" type="button">Random Colors</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  <details class="control-section" id="workflowSection" data-remember-open>
+                    <summary>Workflow & Automation</summary>
+                    <div class="section-body">
+                      <div class="field-grid compact-field-grid">
+                        <div class="field full">
+                          <label>Workflow</label>
+                          <div class="action-cluster">
+                            <div class="quick-row">
+                              <button class="btn btn-soft" id="undoBtn" type="button">Undo</button>
+                              <button class="btn btn-soft" id="redoBtn" type="button">Redo</button>
+                              <button class="btn btn-soft" id="cloneOverlayToAllTabsBtn" type="button">Style To All Tabs</button>
+                              <button class="btn btn-soft" id="applyPresetToTabBtn" type="button">Style To Current Tab</button>
+                            </div>
+                            <p class="help-text" id="historyHint">History enabled. Shortcuts: Cmd/Ctrl+Z, Cmd/Ctrl+Y, Shift+Cmd/Ctrl+Z.</p>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label>Smart Guides</label>
+                          <div class="action-cluster">
+                            <div class="quick-row">
+                              <label class="toggle" for="showGridToggle">
+                                <input id="showGridToggle" type="checkbox">
+                                Show Grid
+                              </label>
+                              <label class="toggle" for="showCenterGuidesToggle">
+                                <input id="showCenterGuidesToggle" type="checkbox" checked>
+                                Center Guides
+                              </label>
+                              <label class="toggle" for="snapToGridToggle">
+                                <input id="snapToGridToggle" type="checkbox">
+                                Snap To Grid
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="field">
+                          <label for="gridSizeRange">Grid Size</label>
+                          <div class="range-row">
+                            <input id="gridSizeRange" type="range" min="4" max="80" value="16">
+                            <output id="gridSizeOutput">16px</output>
+                          </div>
+                        </div>
+
+                        <div class="field full">
+                          <label>Bulk Caption Tools</label>
+                          <textarea id="bulkLinesTextarea" placeholder="One headline per line&#10;Example: Track daily goals&#10;Build focused habits&#10;Visualize progress"></textarea>
+                          <div class="quick-row" style="margin-top:8px;">
+                            <button class="btn btn-soft" id="autoFillTitlesBtn" type="button">Auto Fill Headlines</button>
+                            <button class="btn btn-soft" id="autoNumberBadgesBtn" type="button">Auto Number Badges</button>
+                            <button class="btn btn-ghost" id="clearTextForTabBtn" type="button">Clear Tab Text</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+            </details>
+
+            <details class="control-section" id="exportSection" data-remember-open>
+              <summary>Export</summary>
+              <div class="section-body">
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="outputWidth">Output Width</label>
+                    <input id="outputWidth" type="number" min="1" step="1">
+                  </div>
+                  <div class="field">
+                    <label for="outputHeight">Output Height</label>
+                    <input id="outputHeight" type="number" min="1" step="1">
+                  </div>
+                  <div class="field">
+                    <label for="outputFormat">Format</label>
+                    <select id="outputFormat">
+                      <option value="png">PNG</option>
+                      <option value="jpeg">JPEG</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="jpegQuality">JPEG Quality</label>
+                    <div class="range-row">
+                      <input id="jpegQuality" type="range" min="65" max="100" value="92">
+                      <output id="qualityOutput">92%</output>
+                    </div>
+                  </div>
+                  <div class="field full">
+                    <label class="toggle" for="lockRatioToggle">
+                      <input id="lockRatioToggle" type="checkbox" checked>
+                      Lock aspect ratio while resizing
+                    </label>
+                  </div>
+                </div>
+                <div class="upload-actions">
+                  <button class="btn btn-primary" id="exportSelectedBtn" type="button">Export Selected</button>
+                  <button class="btn btn-soft" id="exportTabBtn" type="button">Export Current Tab (ZIP)</button>
+                  <button class="btn btn-soft" id="exportAllBtn" type="button">Export All Tabs (ZIP)</button>
+                  <button class="btn btn-soft" id="useSpecSizeBtn" type="button">Use Play Policy Size</button>
+                </div>
+                <p class="help-text" style="margin-top:8px;">Multi-file exports are bundled as ZIP files. Use Project JSON for full round-trip edits and Manifest JSON for checklist payloads.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div id="metadataWorkspace" class="panel hidden">
+          <div class="panel-accordion" id="metadataAccordion" data-accordion="single">
+            <details class="control-section" id="metadataFieldsSection" data-remember-open open>
+              <summary>Store Listing Metadata</summary>
+              <div class="section-body">
+                <p class="help-text">Track key listing copy and policy-sensitive details together with your graphics package.</p>
+                <div class="metadata-grid" id="metadataFields"></div>
+              </div>
+            </details>
+
+            <details class="control-section" id="metadataPreviewSection" data-remember-open>
+              <summary>Metadata Preview</summary>
+              <div class="section-body">
+                <div class="metadata-preview" id="metadataPreview"></div>
+              </div>
+            </details>
+
+            <details class="control-section" id="metadataChecklistSection" data-remember-open>
+              <summary>Policy Checklist</summary>
+              <div class="section-body">
+                <div class="checklist" id="metadataChecklist"></div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <article class="card preview-card">
+          <h2>Live Preview</h2>
+          <p class="help-text" id="previewCaption"></p>
+          <div class="canvas-shell" id="canvasShell">
+            <p class="empty-preview" id="emptyPreview">Upload an image in the current tab to start composing a polished Play Store graphic.</p>
+            <canvas id="previewCanvas" class="hidden"></canvas>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Validation</h2>
+          <div class="validation-list" id="validationList"></div>
+        </article>
+
+        <article class="card">
+          <h2>Coverage Dashboard</h2>
+          <div class="coverage-list" id="coverageList"></div>
+        </article>
+      </section>
+    </div>
+  </section>
+</div>
+
+<script>
+  const MB = 1024 * 1024;
+  const RATIO_TOLERANCE = 0.02;
+  const SECTION_STATE_STORAGE_KEY = 'play_console_creative_sections_v2';
+
+  const ASSET_SPECS = [
+    {
+      id: 'appIcon',
+      label: 'App Icon',
+      note: 'PNG or JPEG, max 1 MB, exactly 512 × 512 px',
+      minCount: 1,
+      maxCount: 1,
+      maxSizeMB: 1,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      fixed: { width: 512, height: 512 },
+      allowedRatios: [1],
+      minSide: 512,
+      maxSide: 512,
+      required: true,
+      recommendedPortrait: { width: 512, height: 512 },
+      recommendedLandscape: { width: 512, height: 512 },
+    },
+    {
+      id: 'featureGraphic',
+      label: 'Feature Graphic',
+      note: 'PNG or JPEG, max 15 MB, exactly 1024 × 500 px',
+      minCount: 1,
+      maxCount: 1,
+      maxSizeMB: 15,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      fixed: { width: 1024, height: 500 },
+      allowedRatios: [1024 / 500],
+      minSide: 500,
+      maxSide: 1024,
+      required: true,
+      recommendedPortrait: { width: 1024, height: 500 },
+      recommendedLandscape: { width: 1024, height: 500 },
+    },
+    {
+      id: 'phoneShots',
+      label: 'Phone Screenshots',
+      note: '2-8 images, PNG or JPEG, max 8 MB each, 16:9 or 9:16, each side 320-3840 px',
+      minCount: 2,
+      maxCount: 8,
+      maxSizeMB: 8,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      allowedRatios: [16 / 9, 9 / 16],
+      minSide: 320,
+      maxSide: 3840,
+      required: true,
+      recommendedPortrait: { width: 1080, height: 1920 },
+      recommendedLandscape: { width: 1920, height: 1080 },
+    },
+    {
+      id: 'tablet7Shots',
+      label: '7-inch Tablet',
+      note: 'Up to 8 images, PNG or JPEG, max 8 MB each, 16:9 or 9:16, each side 320-3840 px',
+      minCount: 0,
+      maxCount: 8,
+      maxSizeMB: 8,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      allowedRatios: [16 / 9, 9 / 16],
+      minSide: 320,
+      maxSide: 3840,
+      required: false,
+      recommendedPortrait: { width: 1200, height: 2133 },
+      recommendedLandscape: { width: 2133, height: 1200 },
+    },
+    {
+      id: 'tablet10Shots',
+      label: '10-inch Tablet',
+      note: 'Up to 8 images, PNG or JPEG, max 8 MB each, 16:9 or 9:16, each side 1080-7680 px',
+      minCount: 0,
+      maxCount: 8,
+      maxSizeMB: 8,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      allowedRatios: [16 / 9, 9 / 16],
+      minSide: 1080,
+      maxSide: 7680,
+      required: false,
+      recommendedPortrait: { width: 1440, height: 2560 },
+      recommendedLandscape: { width: 2560, height: 1440 },
+    },
+    {
+      id: 'largeScreenShots',
+      label: 'Large Screenshots',
+      note: '4-8 images, PNG or JPEG, max 8 MB each, 16:9 or 9:16, each side 1080-7680 px',
+      minCount: 4,
+      maxCount: 8,
+      maxSizeMB: 8,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      allowedRatios: [16 / 9, 9 / 16],
+      minSide: 1080,
+      maxSide: 7680,
+      required: false,
+      recommendedPortrait: { width: 1440, height: 2560 },
+      recommendedLandscape: { width: 2560, height: 1440 },
+    },
+    {
+      id: 'tvShots',
+      label: 'TV / Landscape Set',
+      note: '4-8 images, PNG or JPEG, max 15 MB each, 16:9 or 9:16, each side 720-7680 px',
+      minCount: 4,
+      maxCount: 8,
+      maxSizeMB: 15,
+      mimeTypes: ['image/png', 'image/jpeg'],
+      allowedRatios: [16 / 9, 9 / 16],
+      minSide: 720,
+      maxSide: 7680,
+      required: false,
+      recommendedPortrait: { width: 1080, height: 1920 },
+      recommendedLandscape: { width: 1920, height: 1080 },
+    },
+  ];
+
+  const STYLE_PRESETS = {
+    launch: {
+      bgStyle: 'gradient',
+      bgColor1: '#0b7285',
+      bgColor2: '#f08c00',
+      textColor: '#ffffff',
+      subtitleColor: '#dff2ff',
+      badgeColor: '#ffe8cc',
+      frameStyle: 'device',
+      align: 'center',
+      scale: 92,
+      shadow: 42,
+      cornerRadius: 28,
+    },
+    clean: {
+      bgStyle: 'solid',
+      bgColor1: '#183153',
+      bgColor2: '#28588f',
+      textColor: '#f8fbff',
+      subtitleColor: '#d4e1f6',
+      badgeColor: '#ffd6a5',
+      frameStyle: 'floating',
+      align: 'left',
+      scale: 88,
+      shadow: 26,
+      cornerRadius: 20,
+    },
+    editorial: {
+      bgStyle: 'radial',
+      bgColor1: '#005f73',
+      bgColor2: '#ca6702',
+      textColor: '#ffffff',
+      subtitleColor: '#f1f8ff',
+      badgeColor: '#ffdfb3',
+      frameStyle: 'raw',
+      align: 'right',
+      scale: 90,
+      shadow: 34,
+      cornerRadius: 18,
+    },
+  };
+
+  const METADATA_FIELDS = [
+    { key: 'appName', label: 'App Name', type: 'text', max: 30, placeholder: 'Example: FocusFlow' },
+    { key: 'shortDescription', label: 'Short Description', type: 'textarea', max: 80, placeholder: 'Summarize app value in one sharp line.' },
+    { key: 'fullDescription', label: 'Full Description', type: 'textarea', max: 4000, placeholder: 'Highlight core features, value, and trust signals.' },
+    { key: 'category', label: 'App Category', type: 'select', options: ['Productivity', 'Tools', 'Finance', 'Health & Fitness', 'Education', 'Lifestyle', 'Business', 'Entertainment'] },
+    { key: 'supportEmail', label: 'Support Email', type: 'email', placeholder: 'support@example.com' },
+    { key: 'privacyPolicyUrl', label: 'Privacy Policy URL', type: 'url', placeholder: 'https://example.com/privacy' },
+    { key: 'releaseNotes', label: 'Release Notes', type: 'textarea', max: 500, placeholder: 'List updates users should know about.' },
+  ];
+
+  const state = {
+    activeTab: ASSET_SPECS[0].id,
+    assets: Object.fromEntries(ASSET_SPECS.map((spec) => [spec.id, []])),
+    selected: Object.fromEntries(ASSET_SPECS.map((spec) => [spec.id, -1])),
+    output: {
+      width: null,
+      height: null,
+      format: 'png',
+      jpegQuality: 92,
+      lockRatio: true,
+      ratio: 1,
+      lastSpecId: null,
+    },
+    metadata: {
+      appName: '',
+      shortDescription: '',
+      fullDescription: '',
+      category: 'Productivity',
+      supportEmail: '',
+      privacyPolicyUrl: '',
+      releaseNotes: '',
+    },
+    ui: {
+      decorationSelection: {},
+      drag: null,
+      guides: {
+        showGrid: false,
+        showCenterGuides: true,
+        snapToGrid: false,
+        gridSize: 16,
+      },
+      history: {
+        undo: [],
+        redo: [],
+        max: 80,
+        suppress: false,
+      },
+      sectionOpen: {},
+    },
+  };
+
+  const elements = {
+    tabStrip: document.getElementById('tabStrip'),
+    specCard: document.getElementById('specCard'),
+    uploadHelp: document.getElementById('uploadHelp'),
+    dropzoneCaption: document.getElementById('dropzoneCaption'),
+    queueStatus: document.getElementById('queueStatus'),
+    assetList: document.getElementById('assetList'),
+    validationList: document.getElementById('validationList'),
+    coverageList: document.getElementById('coverageList'),
+    previewCaption: document.getElementById('previewCaption'),
+    emptyPreview: document.getElementById('emptyPreview'),
+    previewCanvas: document.getElementById('previewCanvas'),
+    canvasShell: document.getElementById('canvasShell'),
+    uploadDropzone: document.getElementById('uploadDropzone'),
+    assetInput: document.getElementById('assetInput'),
+    projectImportInput: document.getElementById('projectImportInput'),
+    metadataFields: document.getElementById('metadataFields'),
+    metadataPreview: document.getElementById('metadataPreview'),
+    metadataChecklist: document.getElementById('metadataChecklist'),
+    assetWorkspace: document.getElementById('assetWorkspace'),
+    metadataWorkspace: document.getElementById('metadataWorkspace'),
+    assetAccordion: document.getElementById('assetAccordion'),
+    metadataAccordion: document.getElementById('metadataAccordion'),
+
+    stylePreset: document.getElementById('stylePreset'),
+    bgStyle: document.getElementById('bgStyle'),
+    bgColor1: document.getElementById('bgColor1'),
+    bgColor2: document.getElementById('bgColor2'),
+    titleText: document.getElementById('titleText'),
+    subtitleText: document.getElementById('subtitleText'),
+    badgeText: document.getElementById('badgeText'),
+    textColor: document.getElementById('textColor'),
+    subtitleColor: document.getElementById('subtitleColor'),
+    badgeColor: document.getElementById('badgeColor'),
+    alignRow: document.getElementById('alignRow'),
+    frameRow: document.getElementById('frameRow'),
+    scaleRange: document.getElementById('scaleRange'),
+    shadowRange: document.getElementById('shadowRange'),
+    radiusRange: document.getElementById('radiusRange'),
+    scaleOutput: document.getElementById('scaleOutput'),
+    shadowOutput: document.getElementById('shadowOutput'),
+    radiusOutput: document.getElementById('radiusOutput'),
+    safeAreaToggle: document.getElementById('safeAreaToggle'),
+    shapeLayerSelect: document.getElementById('shapeLayerSelect'),
+    shapeKindSelect: document.getElementById('shapeKindSelect'),
+    shapeBlendModeSelect: document.getElementById('shapeBlendModeSelect'),
+    shapeXRange: document.getElementById('shapeXRange'),
+    shapeYRange: document.getElementById('shapeYRange'),
+    shapeSizeRange: document.getElementById('shapeSizeRange'),
+    shapeRotateRange: document.getElementById('shapeRotateRange'),
+    shapeOpacityRange: document.getElementById('shapeOpacityRange'),
+    shapeStrokeRange: document.getElementById('shapeStrokeRange'),
+    shapeLayerShadowRange: document.getElementById('shapeLayerShadowRange'),
+    shapeXOutput: document.getElementById('shapeXOutput'),
+    shapeYOutput: document.getElementById('shapeYOutput'),
+    shapeSizeOutput: document.getElementById('shapeSizeOutput'),
+    shapeRotateOutput: document.getElementById('shapeRotateOutput'),
+    shapeOpacityOutput: document.getElementById('shapeOpacityOutput'),
+    shapeStrokeOutput: document.getElementById('shapeStrokeOutput'),
+    shapeLayerShadowOutput: document.getElementById('shapeLayerShadowOutput'),
+    shapeFillColor: document.getElementById('shapeFillColor'),
+    shapeStrokeColor: document.getElementById('shapeStrokeColor'),
+    shapeVisibleToggle: document.getElementById('shapeVisibleToggle'),
+    shapeLockedToggle: document.getElementById('shapeLockedToggle'),
+    shapeFlipXToggle: document.getElementById('shapeFlipXToggle'),
+    shapeFlipYToggle: document.getElementById('shapeFlipYToggle'),
+    undoBtn: document.getElementById('undoBtn'),
+    redoBtn: document.getElementById('redoBtn'),
+    historyHint: document.getElementById('historyHint'),
+    duplicateLayerToTabBtn: document.getElementById('duplicateLayerToTabBtn'),
+    cloneOverlayToAllTabsBtn: document.getElementById('cloneOverlayToAllTabsBtn'),
+    showGridToggle: document.getElementById('showGridToggle'),
+    showCenterGuidesToggle: document.getElementById('showCenterGuidesToggle'),
+    snapToGridToggle: document.getElementById('snapToGridToggle'),
+    gridSizeRange: document.getElementById('gridSizeRange'),
+    gridSizeOutput: document.getElementById('gridSizeOutput'),
+    bulkLinesTextarea: document.getElementById('bulkLinesTextarea'),
+    autoFillTitlesBtn: document.getElementById('autoFillTitlesBtn'),
+    autoNumberBadgesBtn: document.getElementById('autoNumberBadgesBtn'),
+    clearTextForTabBtn: document.getElementById('clearTextForTabBtn'),
+
+    outputWidth: document.getElementById('outputWidth'),
+    outputHeight: document.getElementById('outputHeight'),
+    outputFormat: document.getElementById('outputFormat'),
+    jpegQuality: document.getElementById('jpegQuality'),
+    qualityOutput: document.getElementById('qualityOutput'),
+    lockRatioToggle: document.getElementById('lockRatioToggle'),
+    exportAllBtn: document.getElementById('exportAllBtn'),
+  };
+
+  function defaultOverlay() {
+    const preset = STYLE_PRESETS.launch;
+    return {
+      title: '',
+      subtitle: '',
+      badge: '',
+      bgStyle: preset.bgStyle,
+      bgColor1: preset.bgColor1,
+      bgColor2: preset.bgColor2,
+      textColor: preset.textColor,
+      subtitleColor: preset.subtitleColor,
+      badgeColor: preset.badgeColor,
+      align: preset.align,
+      frameStyle: preset.frameStyle,
+      scale: preset.scale,
+      shadow: preset.shadow,
+      cornerRadius: preset.cornerRadius,
+      safeArea: true,
+      stylePreset: 'launch',
+      decorations: [],
+    };
+  }
+
+  function cloneOverlay(overlay = {}) {
+    const base = {
+      ...defaultOverlay(),
+      ...overlay,
+    };
+
+    base.decorations = Array.isArray(overlay.decorations)
+      ? overlay.decorations.map((item) => normalizeDecorationLayer(item))
+      : [];
+
+    return base;
+  }
+
+  function createAssetRecord({ file, dataUrl, image, spec }) {
+    return {
+      id: (self.crypto && typeof self.crypto.randomUUID === 'function')
+        ? self.crypto.randomUUID()
+        : `asset_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+      name: file ? file.name : `${spec.id}_${Date.now()}.png`,
+      type: file ? file.type : 'image/png',
+      size: file ? file.size : Math.ceil((dataUrl.length || 0) * 0.75),
+      width: image.width,
+      height: image.height,
+      dataUrl,
+      image,
+      overlay: defaultOverlay(),
+      issues: [],
+      warnings: [],
+    };
+  }
+
+  function getSpecById(id) {
+    return ASSET_SPECS.find((spec) => spec.id === id);
+  }
+
+  function getActiveSpec() {
+    return getSpecById(state.activeTab);
+  }
+
+  function getAssetsForTab(tabId = state.activeTab) {
+    return state.assets[tabId] || [];
+  }
+
+  function getSelectedIndex(tabId = state.activeTab) {
+    return state.selected[tabId] ?? -1;
+  }
+
+  function getSelectedAsset(tabId = state.activeTab) {
+    const assets = getAssetsForTab(tabId);
+    const index = getSelectedIndex(tabId);
+    if (index < 0 || index >= assets.length) {
+      return null;
+    }
+    return assets[index];
+  }
+
+  function createId(prefix = 'id') {
+    if (self.crypto && typeof self.crypto.randomUUID === 'function') {
+      return `${prefix}_${self.crypto.randomUUID()}`;
+    }
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function clampNumber(value, min, max, fallback = min) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return fallback;
+    return Math.min(max, Math.max(min, num));
+  }
+
+  function ensureDecorations(asset) {
+    if (!asset) return [];
+    if (!asset.overlay) {
+      asset.overlay = cloneOverlay();
+    }
+    if (!Array.isArray(asset.overlay.decorations)) {
+      asset.overlay.decorations = [];
+      return asset.overlay.decorations;
+    }
+    asset.overlay.decorations = asset.overlay.decorations.map((layer) => normalizeDecorationLayer(layer));
+    return asset.overlay.decorations;
+  }
+
+  function getDecorationSelectionKey(asset) {
+    return asset ? asset.id : '';
+  }
+
+  function getSelectedDecorationId(asset = getSelectedAsset()) {
+    const key = getDecorationSelectionKey(asset);
+    if (!key) return null;
+    return state.ui.decorationSelection[key] || null;
+  }
+
+  function setSelectedDecorationId(asset, decorationId) {
+    const key = getDecorationSelectionKey(asset);
+    if (!key) return;
+    if (decorationId) {
+      state.ui.decorationSelection[key] = decorationId;
+      return;
+    }
+    delete state.ui.decorationSelection[key];
+  }
+
+  function getSelectedDecoration(asset = getSelectedAsset()) {
+    const decorations = ensureDecorations(asset);
+    if (decorations.length === 0) return null;
+
+    const selectedId = getSelectedDecorationId(asset);
+    const found = decorations.find((layer) => layer.id === selectedId);
+    if (found) return found;
+
+    setSelectedDecorationId(asset, decorations[decorations.length - 1].id);
+    return decorations[decorations.length - 1];
+  }
+
+  function getDecorationLabel(kind) {
+    const labels = {
+      rect: 'Rectangle',
+      circle: 'Circle',
+      triangle: 'Triangle',
+      star: 'Star',
+      diamond: 'Diamond',
+      hexagon: 'Hexagon',
+      heart: 'Heart',
+      plus: 'Plus',
+      bolt: 'Bolt',
+      check: 'Check',
+      play: 'Play',
+    };
+    return labels[kind] || kind;
+  }
+
+  function createDecorationLayer(kind) {
+    return {
+      id: createId('layer'),
+      kind,
+      x: 50,
+      y: 52,
+      size: kind === 'star' ? 12 : 14,
+      rotation: 0,
+      opacity: 92,
+      fill: '#ffffff',
+      stroke: '#102a43',
+      strokeWidth: kind === 'check' ? 4 : 0,
+      visible: true,
+      locked: false,
+      flipX: false,
+      flipY: false,
+      blendMode: 'source-over',
+      layerShadow: 0,
+    };
+  }
+
+  function normalizeDecorationLayer(layer) {
+    const base = createDecorationLayer(layer?.kind || 'rect');
+    return {
+      ...base,
+      ...(layer || {}),
+      kind: layer?.kind || base.kind,
+      x: clampNumber(layer?.x, 0, 100, base.x),
+      y: clampNumber(layer?.y, 0, 100, base.y),
+      size: clampNumber(layer?.size, 4, 48, base.size),
+      rotation: clampNumber(layer?.rotation, 0, 360, base.rotation),
+      opacity: clampNumber(layer?.opacity, 10, 100, base.opacity),
+      strokeWidth: clampNumber(layer?.strokeWidth, 0, 24, base.strokeWidth),
+      layerShadow: clampNumber(layer?.layerShadow, 0, 100, base.layerShadow),
+      visible: layer?.visible !== false,
+      locked: layer?.locked === true,
+      flipX: layer?.flipX === true,
+      flipY: layer?.flipY === true,
+      blendMode: layer?.blendMode || 'source-over',
+      fill: typeof layer?.fill === 'string' ? layer.fill : base.fill,
+      stroke: typeof layer?.stroke === 'string' ? layer.stroke : base.stroke,
+      id: layer?.id || base.id,
+    };
+  }
+
+  function setDecorationControlsDisabled(disabled) {
+    const controls = [
+      elements.shapeLayerSelect,
+      elements.shapeKindSelect,
+      elements.shapeBlendModeSelect,
+      elements.shapeXRange,
+      elements.shapeYRange,
+      elements.shapeSizeRange,
+      elements.shapeRotateRange,
+      elements.shapeOpacityRange,
+      elements.shapeStrokeRange,
+      elements.shapeLayerShadowRange,
+      elements.shapeFillColor,
+      elements.shapeStrokeColor,
+      elements.shapeVisibleToggle,
+      elements.shapeLockedToggle,
+      elements.shapeFlipXToggle,
+      elements.shapeFlipYToggle,
+      document.getElementById('shapeAlignLeftBtn'),
+      document.getElementById('shapeAlignCenterBtn'),
+      document.getElementById('shapeAlignRightBtn'),
+      document.getElementById('shapeAlignTopBtn'),
+      document.getElementById('shapeAlignMiddleBtn'),
+      document.getElementById('shapeAlignBottomBtn'),
+      document.getElementById('shapeNudgeLeftBtn'),
+      document.getElementById('shapeNudgeRightBtn'),
+      document.getElementById('shapeNudgeUpBtn'),
+      document.getElementById('shapeNudgeDownBtn'),
+      document.getElementById('shapeRandomColorBtn'),
+      document.getElementById('duplicateShapeBtn'),
+      document.getElementById('shapeBringForwardBtn'),
+      document.getElementById('shapeSendBackwardBtn'),
+      document.getElementById('shapeMoveTopBtn'),
+      document.getElementById('shapeMoveBottomBtn'),
+      document.getElementById('removeShapeBtn'),
+    ];
+    controls.forEach((control) => {
+      if (control) control.disabled = disabled;
+    });
+  }
+
+  function updateDecorationOutputs(layer) {
+    if (!layer) {
+      elements.shapeXOutput.textContent = '-';
+      elements.shapeYOutput.textContent = '-';
+      elements.shapeSizeOutput.textContent = '-';
+      elements.shapeRotateOutput.textContent = '-';
+      elements.shapeOpacityOutput.textContent = '-';
+      elements.shapeStrokeOutput.textContent = '-';
+      elements.shapeLayerShadowOutput.textContent = '-';
+      return;
+    }
+
+    elements.shapeXOutput.textContent = `${Math.round(layer.x)}%`;
+    elements.shapeYOutput.textContent = `${Math.round(layer.y)}%`;
+    elements.shapeSizeOutput.textContent = `${Math.round(layer.size)}%`;
+    elements.shapeRotateOutput.textContent = `${Math.round(layer.rotation)}deg`;
+    elements.shapeOpacityOutput.textContent = `${Math.round(layer.opacity)}%`;
+    elements.shapeStrokeOutput.textContent = `${Math.round(layer.strokeWidth)}px`;
+    elements.shapeLayerShadowOutput.textContent = `${Math.round(layer.layerShadow || 0)}%`;
+  }
+
+  function renderDecorationControls() {
+    if (isMetadataTab()) {
+      elements.shapeLayerSelect.innerHTML = '';
+      setDecorationControlsDisabled(true);
+      updateDecorationOutputs(null);
+      return;
+    }
+
+    const asset = getSelectedAsset();
+    if (!asset) {
+      elements.shapeLayerSelect.innerHTML = '<option value="">No asset selected</option>';
+      setDecorationControlsDisabled(true);
+      updateDecorationOutputs(null);
+      return;
+    }
+
+    const decorations = ensureDecorations(asset);
+    const selectedId = getSelectedDecorationId(asset);
+    elements.shapeLayerSelect.innerHTML = '';
+
+    if (decorations.length === 0) {
+      elements.shapeLayerSelect.innerHTML = '<option value="">No layers yet</option>';
+      setSelectedDecorationId(asset, null);
+      setDecorationControlsDisabled(true);
+      updateDecorationOutputs(null);
+      return;
+    }
+
+    decorations.forEach((layer, index) => {
+      const option = document.createElement('option');
+      option.value = layer.id;
+      const flags = `${layer.visible ? '' : ' hidden'}${layer.locked ? ' locked' : ''}`.trim();
+      option.textContent = `${index + 1}. ${getDecorationLabel(layer.kind)}${flags ? ` • ${flags}` : ''}`;
+      elements.shapeLayerSelect.appendChild(option);
+    });
+
+    const resolved = decorations.find((layer) => layer.id === selectedId) || decorations[decorations.length - 1];
+    setSelectedDecorationId(asset, resolved.id);
+    elements.shapeLayerSelect.value = resolved.id;
+
+    elements.shapeKindSelect.value = resolved.kind;
+    elements.shapeBlendModeSelect.value = resolved.blendMode || 'source-over';
+    elements.shapeXRange.value = resolved.x;
+    elements.shapeYRange.value = resolved.y;
+    elements.shapeSizeRange.value = resolved.size;
+    elements.shapeRotateRange.value = resolved.rotation;
+    elements.shapeOpacityRange.value = resolved.opacity;
+    elements.shapeStrokeRange.value = resolved.strokeWidth;
+    elements.shapeLayerShadowRange.value = resolved.layerShadow || 0;
+    elements.shapeFillColor.value = resolved.fill;
+    elements.shapeStrokeColor.value = resolved.stroke;
+    elements.shapeVisibleToggle.checked = resolved.visible !== false;
+    elements.shapeLockedToggle.checked = resolved.locked === true;
+    elements.shapeFlipXToggle.checked = resolved.flipX === true;
+    elements.shapeFlipYToggle.checked = resolved.flipY === true;
+
+    setDecorationControlsDisabled(false);
+    updateDecorationOutputs(resolved);
+  }
+
+  function syncSelectedDecorationFromControls() {
+    const asset = getSelectedAsset();
+    const layer = getSelectedDecoration(asset);
+    if (!asset || !layer) return;
+
+    layer.kind = elements.shapeKindSelect.value || layer.kind;
+    layer.blendMode = elements.shapeBlendModeSelect.value || 'source-over';
+    layer.x = clampDimension(parseInt(elements.shapeXRange.value, 10), 0, 100);
+    layer.y = clampDimension(parseInt(elements.shapeYRange.value, 10), 0, 100);
+    layer.size = clampDimension(parseInt(elements.shapeSizeRange.value, 10), 4, 48);
+    layer.rotation = clampDimension(parseInt(elements.shapeRotateRange.value, 10), 0, 360);
+    layer.opacity = clampDimension(parseInt(elements.shapeOpacityRange.value, 10), 10, 100);
+    layer.strokeWidth = clampDimension(parseInt(elements.shapeStrokeRange.value, 10), 0, 24);
+    layer.layerShadow = clampDimension(parseInt(elements.shapeLayerShadowRange.value, 10), 0, 100);
+    layer.fill = elements.shapeFillColor.value;
+    layer.stroke = elements.shapeStrokeColor.value;
+    layer.visible = elements.shapeVisibleToggle.checked;
+    layer.locked = elements.shapeLockedToggle.checked;
+    layer.flipX = elements.shapeFlipXToggle.checked;
+    layer.flipY = elements.shapeFlipYToggle.checked;
+    snapLayerPosition(layer);
+    updateDecorationOutputs(layer);
+  }
+
+  function addDecoration(kind) {
+    const asset = getSelectedAsset();
+    if (!asset) {
+      window.alert('Select an asset first, then add shapes/icons.');
+      return;
+    }
+
+    const layer = createDecorationLayer(kind);
+    if (kind === 'bolt') layer.fill = '#ffd43b';
+    if (kind === 'check') {
+      layer.fill = '#ffffff';
+      layer.stroke = '#14532d';
+      layer.strokeWidth = 6;
+    }
+    if (kind === 'play') layer.fill = '#fee440';
+    if (kind === 'heart') {
+      layer.fill = '#ef476f';
+      layer.stroke = '#7a1631';
+      layer.strokeWidth = 0;
+    }
+    if (kind === 'plus') {
+      layer.fill = '#ffffff';
+      layer.stroke = '#0f4c81';
+      layer.strokeWidth = 2;
+    }
+
+    const decorations = ensureDecorations(asset);
+    decorations.push(layer);
+    setSelectedDecorationId(asset, layer.id);
+    renderDecorationControls();
+    renderPreview();
+    recordHistory();
+  }
+
+  function removeSelectedDecoration() {
+    const asset = getSelectedAsset();
+    if (!asset) return;
+
+    const decorations = ensureDecorations(asset);
+    const selectedId = getSelectedDecorationId(asset);
+    const index = decorations.findIndex((layer) => layer.id === selectedId);
+    if (index < 0) return;
+
+    decorations.splice(index, 1);
+    const replacement = decorations[Math.max(0, index - 1)] || decorations[0] || null;
+    setSelectedDecorationId(asset, replacement ? replacement.id : null);
+    renderDecorationControls();
+    renderPreview();
+    recordHistory();
+  }
+
+  function duplicateSelectedDecoration() {
+    const asset = getSelectedAsset();
+    const selected = getSelectedDecoration(asset);
+    if (!asset || !selected) return;
+
+    const copy = {
+      ...selected,
+      id: createId('layer'),
+      x: clampDimension(selected.x + 4, 0, 100),
+      y: clampDimension(selected.y + 4, 0, 100),
+    };
+
+    ensureDecorations(asset).push(copy);
+    setSelectedDecorationId(asset, copy.id);
+    renderDecorationControls();
+    renderPreview();
+    recordHistory();
+  }
+
+  function reorderSelectedDecoration(direction) {
+    const asset = getSelectedAsset();
+    const decorations = ensureDecorations(asset);
+    const selectedId = getSelectedDecorationId(asset);
+    const index = decorations.findIndex((layer) => layer.id === selectedId);
+    if (index < 0) return;
+
+    if (direction === 'top') {
+      if (index === decorations.length - 1) return;
+      const [layer] = decorations.splice(index, 1);
+      decorations.push(layer);
+      setSelectedDecorationId(asset, layer.id);
+      renderDecorationControls();
+      renderPreview();
+      recordHistory();
+      return;
+    }
+
+    if (direction === 'bottom') {
+      if (index === 0) return;
+      const [layer] = decorations.splice(index, 1);
+      decorations.unshift(layer);
+      setSelectedDecorationId(asset, layer.id);
+      renderDecorationControls();
+      renderPreview();
+      recordHistory();
+      return;
+    }
+
+    const target = direction === 'forward' ? index + 1 : index - 1;
+    if (target < 0 || target >= decorations.length) return;
+
+    const temp = decorations[index];
+    decorations[index] = decorations[target];
+    decorations[target] = temp;
+
+    setSelectedDecorationId(asset, temp.id);
+    renderDecorationControls();
+    renderPreview();
+    recordHistory();
+  }
+
+  function alignSelectedDecoration(mode) {
+    const asset = getSelectedAsset();
+    const layer = getSelectedDecoration(asset);
+    if (!asset || !layer) return;
+
+    if (mode === 'left') layer.x = 10;
+    if (mode === 'center') layer.x = 50;
+    if (mode === 'right') layer.x = 90;
+    if (mode === 'top') layer.y = 10;
+    if (mode === 'middle') layer.y = 50;
+    if (mode === 'bottom') layer.y = 90;
+    snapLayerPosition(layer);
+
+    renderDecorationControls();
+    renderPreview();
+    recordHistory();
+  }
+
+  function nudgeSelectedDecoration(dx, dy) {
+    const asset = getSelectedAsset();
+    const layer = getSelectedDecoration(asset);
+    if (!asset || !layer) return;
+
+    layer.x = clampNumber(layer.x + dx, 0, 100, layer.x);
+    layer.y = clampNumber(layer.y + dy, 0, 100, layer.y);
+    snapLayerPosition(layer);
+    renderDecorationControls();
+    renderPreview();
+    recordHistory();
+  }
+
+  function randomHexColor() {
+    const num = Math.floor(Math.random() * 0xffffff);
+    return `#${num.toString(16).padStart(6, '0')}`;
+  }
+
+  function randomizeSelectedDecorationColors() {
+    const asset = getSelectedAsset();
+    const layer = getSelectedDecoration(asset);
+    if (!asset || !layer) return;
+
+    layer.fill = randomHexColor();
+    layer.stroke = randomHexColor();
+    renderDecorationControls();
+    renderPreview();
+    recordHistory('random-colors');
+  }
+
+  function getGuideCanvasDimensions() {
+    const width = clampDimension(parseInt(elements.outputWidth.value, 10), 1, 7680);
+    const height = clampDimension(parseInt(elements.outputHeight.value, 10), 1, 7680);
+    return { width, height };
+  }
+
+  function snapPercentToGrid(value, axisPixels) {
+    if (!state.ui.guides.snapToGrid) return value;
+    const grid = Math.max(4, state.ui.guides.gridSize || 16);
+    const stepPercent = (grid / Math.max(1, axisPixels)) * 100;
+    if (!Number.isFinite(stepPercent) || stepPercent <= 0) return value;
+    return Math.round(value / stepPercent) * stepPercent;
+  }
+
+  function snapLayerPosition(layer) {
+    if (!layer || !state.ui.guides.snapToGrid) return;
+    const { width, height } = getGuideCanvasDimensions();
+    layer.x = clampNumber(snapPercentToGrid(layer.x, width), 0, 100, layer.x);
+    layer.y = clampNumber(snapPercentToGrid(layer.y, height), 0, 100, layer.y);
+  }
+
+  function duplicateSelectedLayerToTab() {
+    const asset = getSelectedAsset();
+    const selectedLayer = getSelectedDecoration(asset);
+    if (!asset || !selectedLayer) return;
+
+    const assets = getAssetsForTab();
+    assets.forEach((item) => {
+      const layerCopy = normalizeDecorationLayer({
+        ...selectedLayer,
+        id: createId('layer'),
+      });
+      ensureDecorations(item).push(layerCopy);
+      if (item.id === asset.id) {
+        setSelectedDecorationId(item, layerCopy.id);
+      }
+    });
+
+    renderDecorationControls();
+    renderPreview();
+    recordHistory('layer-to-tab');
+  }
+
+  function cloneCurrentOverlayToAllTabs() {
+    const selectedAsset = getSelectedAsset();
+    if (!selectedAsset) return;
+
+    const overlayClone = cloneOverlay(selectedAsset.overlay);
+    ASSET_SPECS.forEach((spec) => {
+      state.assets[spec.id].forEach((asset) => {
+        asset.overlay = cloneOverlay(overlayClone);
+      });
+    });
+
+    renderAll();
+    recordHistory('overlay-to-all-tabs');
+  }
+
+  function getBulkLines() {
+    return (elements.bulkLinesTextarea.value || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  function autoFillTitlesFromBulk() {
+    const lines = getBulkLines();
+    if (lines.length === 0) {
+      window.alert('Add one or more lines in Bulk Caption Tools first.');
+      return;
+    }
+
+    const assets = getAssetsForTab();
+    if (assets.length === 0) {
+      window.alert('No assets in this tab yet.');
+      return;
+    }
+
+    assets.forEach((asset, index) => {
+      const headline = lines[index % lines.length];
+      asset.overlay.title = headline;
+      asset.overlay.subtitle = `Feature highlight ${index + 1}`;
+      if (!asset.overlay.badge) {
+        asset.overlay.badge = `Screen ${index + 1}`;
+      }
+    });
+
+    renderAll();
+    recordHistory('bulk-headlines');
+  }
+
+  function autoNumberBadgesForTab() {
+    const assets = getAssetsForTab();
+    if (assets.length === 0) return;
+    assets.forEach((asset, index) => {
+      asset.overlay.badge = `Screen ${index + 1}`;
+    });
+    renderAll();
+    recordHistory('auto-badges');
+  }
+
+  function clearTextForCurrentTab() {
+    const assets = getAssetsForTab();
+    if (assets.length === 0) return;
+    assets.forEach((asset) => {
+      asset.overlay.title = '';
+      asset.overlay.subtitle = '';
+      asset.overlay.badge = '';
+    });
+    renderAll();
+    recordHistory('clear-tab-text');
+  }
+
+  function syncGuideControls() {
+    elements.showGridToggle.checked = state.ui.guides.showGrid;
+    elements.showCenterGuidesToggle.checked = state.ui.guides.showCenterGuides;
+    elements.snapToGridToggle.checked = state.ui.guides.snapToGrid;
+    elements.gridSizeRange.value = state.ui.guides.gridSize;
+    elements.gridSizeOutput.textContent = `${state.ui.guides.gridSize}px`;
+  }
+
+  function updateGuidesFromControls() {
+    state.ui.guides.showGrid = elements.showGridToggle.checked;
+    state.ui.guides.showCenterGuides = elements.showCenterGuidesToggle.checked;
+    state.ui.guides.snapToGrid = elements.snapToGridToggle.checked;
+    state.ui.guides.gridSize = clampDimension(parseInt(elements.gridSizeRange.value, 10), 4, 80);
+    elements.gridSizeOutput.textContent = `${state.ui.guides.gridSize}px`;
+  }
+
+  function serializeEditableState() {
+    return {
+      activeTab: state.activeTab,
+      selected: { ...state.selected },
+      output: { ...state.output },
+      metadata: { ...state.metadata },
+      guides: { ...state.ui.guides },
+      decorationSelection: { ...state.ui.decorationSelection },
+      assets: Object.fromEntries(
+        ASSET_SPECS.map((spec) => [
+          spec.id,
+          state.assets[spec.id].map((asset) => ({
+            id: asset.id,
+            overlay: cloneOverlay(asset.overlay),
+          })),
+        ])
+      ),
+    };
+  }
+
+  function applyEditableState(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return;
+
+    const validTab = snapshot.activeTab === 'metadata' || ASSET_SPECS.some((spec) => spec.id === snapshot.activeTab);
+    if (validTab) {
+      state.activeTab = snapshot.activeTab;
+    }
+
+    state.selected = {
+      ...state.selected,
+      ...(snapshot.selected || {}),
+    };
+    state.output = {
+      ...state.output,
+      ...(snapshot.output || {}),
+    };
+    state.metadata = {
+      ...state.metadata,
+      ...(snapshot.metadata || {}),
+    };
+    state.ui.guides = {
+      ...state.ui.guides,
+      ...(snapshot.guides || {}),
+    };
+    state.ui.decorationSelection = {
+      ...(snapshot.decorationSelection || {}),
+    };
+
+    ASSET_SPECS.forEach((spec) => {
+      const overlayById = new Map(
+        ((snapshot.assets && snapshot.assets[spec.id]) || []).map((item) => [item.id, item.overlay])
+      );
+      state.assets[spec.id].forEach((asset) => {
+        if (overlayById.has(asset.id)) {
+          asset.overlay = cloneOverlay(overlayById.get(asset.id));
+        }
+      });
+      const maxIndex = state.assets[spec.id].length - 1;
+      if (maxIndex < 0) {
+        state.selected[spec.id] = -1;
+      } else {
+        const selected = parseInt(state.selected[spec.id], 10);
+        state.selected[spec.id] = Number.isFinite(selected)
+          ? Math.min(maxIndex, Math.max(0, selected))
+          : 0;
+      }
+    });
+
+    state.ui.drag = null;
+    syncGuideControls();
+    buildMetadataFields();
+    renderAll();
+  }
+
+  function statesEqual(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  function updateHistoryUi() {
+    const undoCount = state.ui.history.undo.length;
+    const redoCount = state.ui.history.redo.length;
+    elements.undoBtn.disabled = undoCount <= 1;
+    elements.redoBtn.disabled = redoCount === 0;
+    elements.historyHint.textContent = `History: ${Math.max(0, undoCount - 1)} undo • ${redoCount} redo. Shortcuts: Cmd/Ctrl+Z, Cmd/Ctrl+Y, Shift+Cmd/Ctrl+Z.`;
+  }
+
+  function resetHistory() {
+    const snapshot = serializeEditableState();
+    state.ui.history.undo = [snapshot];
+    state.ui.history.redo = [];
+    updateHistoryUi();
+  }
+
+  function recordHistory() {
+    if (state.ui.history.suppress) return;
+    const snapshot = serializeEditableState();
+    const undoStack = state.ui.history.undo;
+    const last = undoStack[undoStack.length - 1];
+    if (last && statesEqual(last, snapshot)) {
+      updateHistoryUi();
+      return;
+    }
+    undoStack.push(snapshot);
+    if (undoStack.length > state.ui.history.max) {
+      undoStack.shift();
+    }
+    state.ui.history.redo = [];
+    updateHistoryUi();
+  }
+
+  function performUndo() {
+    const undoStack = state.ui.history.undo;
+    const redoStack = state.ui.history.redo;
+    if (undoStack.length <= 1) return;
+
+    const current = undoStack.pop();
+    redoStack.push(current);
+    const previous = undoStack[undoStack.length - 1];
+
+    state.ui.history.suppress = true;
+    try {
+      applyEditableState(previous);
+    } finally {
+      state.ui.history.suppress = false;
+    }
+    updateHistoryUi();
+  }
+
+  function performRedo() {
+    const undoStack = state.ui.history.undo;
+    const redoStack = state.ui.history.redo;
+    if (redoStack.length === 0) return;
+
+    const next = redoStack.pop();
+    undoStack.push(next);
+
+    state.ui.history.suppress = true;
+    try {
+      applyEditableState(next);
+    } finally {
+      state.ui.history.suppress = false;
+    }
+    updateHistoryUi();
+  }
+
+  function handleDecorationHotkeys(event) {
+    const tag = event.target?.tagName || '';
+    if (event.target?.isContentEditable) return;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    const wantsUndo = (event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z';
+    const wantsRedo = (event.metaKey || event.ctrlKey)
+      && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'));
+    if (wantsUndo) {
+      event.preventDefault();
+      performUndo();
+      return;
+    }
+    if (wantsRedo) {
+      event.preventDefault();
+      performRedo();
+      return;
+    }
+
+    if (isMetadataTab()) return;
+
+    const layer = getSelectedDecoration();
+    if (!layer) return;
+
+    const step = event.shiftKey ? 5 : 1;
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      nudgeSelectedDecoration(-step, 0);
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nudgeSelectedDecoration(step, 0);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      nudgeSelectedDecoration(0, -step);
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      nudgeSelectedDecoration(0, step);
+      return;
+    }
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault();
+      removeSelectedDecoration();
+    }
+  }
+
+  function isMetadataTab() {
+    return state.activeTab === 'metadata';
+  }
+
+  function humanSize(bytes) {
+    if (!Number.isFinite(bytes)) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function ratioString(value) {
+    if (!Number.isFinite(value)) return '-';
+    return value >= 1 ? `${value.toFixed(3)}:1` : `1:${(1 / value).toFixed(3)}`;
+  }
+
+  function loadImageFromDataUrl(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Image decode failed.'));
+      image.src = dataUrl;
+    });
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('File read failed.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function getOrientation(width, height) {
+    return width >= height ? 'landscape' : 'portrait';
+  }
+
+  function getRecommendedSize(spec, asset = null) {
+    if (spec.fixed) {
+      return { width: spec.fixed.width, height: spec.fixed.height };
+    }
+    const orientation = asset ? getOrientation(asset.width, asset.height) : 'portrait';
+    return orientation === 'landscape' ? spec.recommendedLandscape : spec.recommendedPortrait;
+  }
+
+  function validateAsset(asset, spec) {
+    const issues = [];
+    const warnings = [];
+
+    if (!spec.mimeTypes.includes(asset.type)) {
+      issues.push(`Unsupported format: ${asset.type || 'unknown'}. Allowed: PNG or JPEG.`);
+    }
+
+    if (asset.size > spec.maxSizeMB * MB) {
+      issues.push(`File size ${humanSize(asset.size)} exceeds ${spec.maxSizeMB} MB limit.`);
+    } else if (asset.size > spec.maxSizeMB * MB * 0.9) {
+      warnings.push(`File size is close to limit (${humanSize(asset.size)} of ${spec.maxSizeMB} MB).`);
+    }
+
+    if (spec.fixed) {
+      if (asset.width !== spec.fixed.width || asset.height !== spec.fixed.height) {
+        issues.push(`Image must be exactly ${spec.fixed.width} × ${spec.fixed.height}px.`);
+      }
+    }
+
+    if (asset.width < spec.minSide || asset.height < spec.minSide) {
+      issues.push(`Each side must be at least ${spec.minSide}px.`);
+    }
+
+    if (asset.width > spec.maxSide || asset.height > spec.maxSide) {
+      issues.push(`Each side must be at most ${spec.maxSide}px.`);
+    }
+
+    const ratio = asset.width / asset.height;
+    const ratioMatches = spec.allowedRatios.some((target) => Math.abs(target - ratio) <= RATIO_TOLERANCE);
+    if (!ratioMatches) {
+      issues.push(`Aspect ratio must be 16:9, 9:16, or a required fixed ratio.`);
+    }
+
+    if (Math.abs(ratio - spec.allowedRatios[0]) <= 0.08 || Math.abs(ratio - spec.allowedRatios[1]) <= 0.08) {
+      warnings.push('Aspect ratio is valid but close to policy edge.');
+    }
+
+    asset.issues = issues;
+    asset.warnings = warnings;
+  }
+
+  function validateTabCount(tabId) {
+    const spec = getSpecById(tabId);
+    if (!spec) return { issues: [], level: 'ok' };
+    const count = getAssetsForTab(tabId).length;
+    const issues = [];
+
+    if (count < spec.minCount) {
+      issues.push(`Need at least ${spec.minCount} image(s); currently ${count}.`);
+    }
+
+    if (count > spec.maxCount) {
+      issues.push(`Maximum ${spec.maxCount} image(s); currently ${count}.`);
+    }
+
+    if (issues.length > 0) {
+      return { issues, level: 'err' };
+    }
+
+    if (count === 0 && !spec.required) {
+      return { issues: ['Optional section not populated yet.'], level: 'warn' };
+    }
+
+    return { issues: ['Count policy is satisfied.'], level: 'ok' };
+  }
+
+  function getAssetStatus(asset) {
+    if (asset.issues.length > 0) return 'err';
+    if (asset.warnings.length > 0) return 'warn';
+    return 'ok';
+  }
+
+  function getTabStatus(tabId) {
+    const spec = getSpecById(tabId);
+    if (!spec) return 'ok';
+
+    const countResult = validateTabCount(tabId);
+    if (countResult.level === 'err') return 'err';
+
+    const assets = getAssetsForTab(tabId);
+    const hasIssues = assets.some((asset) => asset.issues.length > 0);
+    if (hasIssues) return 'err';
+
+    const hasWarnings = countResult.level === 'warn' || assets.some((asset) => asset.warnings.length > 0);
+    if (hasWarnings) return 'warn';
+
+    return 'ok';
+  }
+
+  function buildTabs() {
+    elements.tabStrip.innerHTML = '';
+
+    ASSET_SPECS.forEach((spec) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `tab-btn${state.activeTab === spec.id ? ' active' : ''}`;
+      button.dataset.tab = spec.id;
+      const count = getAssetsForTab(spec.id).length;
+      button.innerHTML = `${spec.label} <span class="meta">${count}/${spec.maxCount}</span>`;
+      button.addEventListener('click', () => setActiveTab(spec.id));
+      elements.tabStrip.appendChild(button);
+    });
+
+    const metadataBtn = document.createElement('button');
+    metadataBtn.type = 'button';
+    metadataBtn.className = `tab-btn${isMetadataTab() ? ' active' : ''}`;
+    metadataBtn.dataset.tab = 'metadata';
+    metadataBtn.innerHTML = 'Metadata <span class="meta">Policy</span>';
+    metadataBtn.addEventListener('click', () => setActiveTab('metadata'));
+    elements.tabStrip.appendChild(metadataBtn);
+  }
+
+  function setActiveTab(tabId) {
+    state.activeTab = tabId;
+    state.ui.drag = null;
+    buildTabs();
+    renderWorkspace();
+    refreshOutputSizing(false);
+    renderAssetList();
+    renderValidation();
+    renderPreview();
+    renderCoverage();
+  }
+
+  function renderWorkspace() {
+    const metadataActive = isMetadataTab();
+    elements.assetWorkspace.classList.toggle('hidden', metadataActive);
+    elements.metadataWorkspace.classList.toggle('hidden', !metadataActive);
+    syncGuideControls();
+
+    if (metadataActive) {
+      renderMetadataPreview();
+      renderMetadataChecklist();
+      elements.previewCaption.textContent = 'Metadata tab helps package listing content with your graphics plan.';
+      return;
+    }
+
+    const spec = getActiveSpec();
+    const count = getAssetsForTab(spec.id).length;
+    elements.specCard.innerHTML = `
+      <h2>${spec.label} Policy Snapshot</h2>
+      <p class="help-text">${spec.note}</p>
+      <div class="spec-pill-grid">
+        <div class="spec-pill"><b>Count</b><span>${spec.minCount}-${spec.maxCount}</span></div>
+        <div class="spec-pill"><b>File Size</b><span>Up to ${spec.maxSizeMB} MB</span></div>
+        <div class="spec-pill"><b>Dimensions</b><span>${spec.fixed ? `${spec.fixed.width}×${spec.fixed.height}` : `${spec.minSide}-${spec.maxSide} px per side`}</span></div>
+        <div class="spec-pill"><b>Loaded</b><span>${count} asset(s)</span></div>
+      </div>
+    `;
+
+    elements.uploadHelp.textContent = `This tab supports ${spec.mimeTypes.map((t) => t.replace('image/', '').toUpperCase()).join(', ')} files. ${spec.note}`;
+    elements.dropzoneCaption.textContent = `Current tab: ${spec.label} (${count}/${spec.maxCount})`;
+
+    if (count === 0) {
+      elements.queueStatus.textContent = 'No assets in this tab yet.';
+    } else {
+      const validCount = getAssetsForTab(spec.id).filter((asset) => asset.issues.length === 0).length;
+      elements.queueStatus.textContent = `${validCount} / ${count} assets pass strict validation.`;
+    }
+
+    loadSelectedOverlayToControls();
+  }
+
+  function renderAssetList() {
+    elements.assetList.innerHTML = '';
+
+    if (isMetadataTab()) {
+      return;
+    }
+
+    const assets = getAssetsForTab();
+    const selectedIndex = getSelectedIndex();
+
+    if (assets.length === 0) {
+      const placeholder = document.createElement('p');
+      placeholder.className = 'help-text';
+      placeholder.textContent = 'No images in this tab yet.';
+      elements.assetList.appendChild(placeholder);
+      return;
+    }
+
+    assets.forEach((asset, index) => {
+      const row = document.createElement('article');
+      row.className = `asset-row${index === selectedIndex ? ' selected' : ''}${asset.issues.length > 0 ? ' invalid' : ''}`;
+      row.addEventListener('click', () => {
+        state.selected[state.activeTab] = index;
+        loadSelectedOverlayToControls();
+        refreshOutputSizing(false);
+        renderAssetList();
+        renderPreview();
+        renderValidation();
+      });
+
+      const status = getAssetStatus(asset);
+      const statusLabel = status === 'ok' ? 'Pass' : status === 'warn' ? 'Review' : 'Fix';
+
+      row.innerHTML = `
+        <img src="${asset.dataUrl}" alt="${asset.name}">
+        <div class="meta">
+          <strong>${escapeHtml(asset.name)}</strong>
+          <span>${asset.width}×${asset.height} • ${humanSize(asset.size)} • ${statusLabel}</span>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" title="Duplicate" type="button">⧉</button>
+          <button class="icon-btn danger" title="Remove" type="button">×</button>
+        </div>
+      `;
+
+      const duplicateBtn = row.querySelector('.icon-btn');
+      const removeBtn = row.querySelector('.icon-btn.danger');
+
+      duplicateBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        duplicateAsset(index);
+      });
+
+      removeBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        removeAsset(index);
+      });
+
+      elements.assetList.appendChild(row);
+    });
+  }
+
+  function duplicateAsset(index) {
+    const spec = getActiveSpec();
+    const assets = getAssetsForTab();
+
+    if (assets.length >= spec.maxCount) {
+      window.alert(`Cannot duplicate. ${spec.label} allows at most ${spec.maxCount} assets.`);
+      return;
+    }
+
+    const source = assets[index];
+    if (!source) return;
+
+    const duplicate = {
+      ...source,
+      id: (self.crypto && typeof self.crypto.randomUUID === 'function')
+        ? self.crypto.randomUUID()
+        : `asset_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+      name: source.name.replace(/(\.[^.]*)?$/, '_copy$1'),
+      overlay: cloneOverlay(source.overlay),
+      issues: [...source.issues],
+      warnings: [...source.warnings],
+    };
+
+    assets.splice(index + 1, 0, duplicate);
+    state.selected[state.activeTab] = index + 1;
+    renderAll();
+    recordHistory();
+  }
+
+  function removeAsset(index) {
+    const assets = getAssetsForTab();
+    assets.splice(index, 1);
+
+    if (assets.length === 0) {
+      state.selected[state.activeTab] = -1;
+    } else {
+      state.selected[state.activeTab] = Math.min(index, assets.length - 1);
+    }
+
+    renderAll();
+    recordHistory();
+  }
+
+  async function handleAssetFiles(fileList) {
+    if (isMetadataTab()) return;
+
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+
+    const spec = getActiveSpec();
+    const assets = getAssetsForTab();
+    const remaining = spec.maxCount - assets.length;
+
+    if (remaining <= 0) {
+      window.alert(`${spec.label} already has the maximum ${spec.maxCount} assets.`);
+      return;
+    }
+
+    const accepted = files.slice(0, remaining);
+    if (files.length > accepted.length) {
+      window.alert(`Only ${remaining} file(s) can be added in this tab right now.`);
+    }
+
+    for (const file of accepted) {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const image = await loadImageFromDataUrl(dataUrl);
+        const asset = createAssetRecord({ file, dataUrl, image, spec });
+        validateAsset(asset, spec);
+        assets.push(asset);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if (assets.length > 0 && state.selected[state.activeTab] < 0) {
+      state.selected[state.activeTab] = 0;
+    }
+
+    if (state.selected[state.activeTab] < 0 && assets.length > 0) {
+      state.selected[state.activeTab] = assets.length - 1;
+    } else if (assets.length > 0) {
+      state.selected[state.activeTab] = assets.length - 1;
+    }
+
+    renderAll();
+    recordHistory();
+  }
+
+  function refreshOutputSizing(force = false) {
+    if (isMetadataTab()) return;
+
+    const spec = getActiveSpec();
+    const selectedAsset = getSelectedAsset();
+    const recommended = getRecommendedSize(spec, selectedAsset);
+    const specChanged = state.output.lastSpecId !== spec.id;
+
+    if (force || specChanged || !state.output.width || !state.output.height) {
+      state.output.width = recommended.width;
+      state.output.height = recommended.height;
+    }
+
+    if (selectedAsset) {
+      state.output.ratio = selectedAsset.width / selectedAsset.height;
+    } else {
+      state.output.ratio = state.output.width / state.output.height;
+    }
+    state.output.lastSpecId = spec.id;
+
+    elements.outputWidth.value = Math.round(state.output.width);
+    elements.outputHeight.value = Math.round(state.output.height);
+    elements.outputFormat.value = state.output.format;
+    elements.jpegQuality.value = state.output.jpegQuality;
+    elements.qualityOutput.textContent = `${state.output.jpegQuality}%`;
+    elements.lockRatioToggle.checked = state.output.lockRatio;
+  }
+
+  function renderValidation() {
+    elements.validationList.innerHTML = '';
+
+    if (isMetadataTab()) {
+      const metaIssues = getMetadataIssues();
+      if (metaIssues.length === 0) {
+        const row = document.createElement('div');
+        row.className = 'status-row ok';
+        row.textContent = 'Metadata checks look healthy for policy prep.';
+        elements.validationList.appendChild(row);
+      } else {
+        metaIssues.forEach((issue) => {
+          const row = document.createElement('div');
+          row.className = issue.level === 'err' ? 'status-row err' : 'status-row warn';
+          row.textContent = issue.message;
+          elements.validationList.appendChild(row);
+        });
+      }
+      return;
+    }
+
+    const spec = getActiveSpec();
+    const countResult = validateTabCount(spec.id);
+
+    countResult.issues.forEach((message) => {
+      const row = document.createElement('div');
+      row.className = `status-row ${countResult.level}`;
+      row.textContent = message;
+      elements.validationList.appendChild(row);
+    });
+
+    const selectedAsset = getSelectedAsset();
+    if (!selectedAsset) {
+      const row = document.createElement('div');
+      row.className = 'status-row warn';
+      row.textContent = 'Select or upload an asset to inspect per-file validation details.';
+      elements.validationList.appendChild(row);
+      return;
+    }
+
+    if (selectedAsset.issues.length === 0 && selectedAsset.warnings.length === 0) {
+      const row = document.createElement('div');
+      row.className = 'status-row ok';
+      row.textContent = `${selectedAsset.name} passes current policy checks.`;
+      elements.validationList.appendChild(row);
+    }
+
+    selectedAsset.issues.forEach((issue) => {
+      const row = document.createElement('div');
+      row.className = 'status-row err';
+      row.textContent = issue;
+      elements.validationList.appendChild(row);
+    });
+
+    selectedAsset.warnings.forEach((warning) => {
+      const row = document.createElement('div');
+      row.className = 'status-row warn';
+      row.textContent = warning;
+      elements.validationList.appendChild(row);
+    });
+  }
+
+  function renderCoverage() {
+    elements.coverageList.innerHTML = '';
+
+    ASSET_SPECS.forEach((spec) => {
+      const count = getAssetsForTab(spec.id).length;
+      const status = getTabStatus(spec.id);
+      const row = document.createElement('div');
+      row.className = 'coverage-row';
+
+      const statusLabel = status === 'ok' ? 'Ready' : status === 'warn' ? 'Review' : 'Action';
+      row.innerHTML = `
+        <div>
+          <strong>${spec.label}</strong>
+          <span>${count}/${spec.maxCount} files loaded • ${spec.note}</span>
+        </div>
+        <span class="pill ${status}">${statusLabel}</span>
+      `;
+
+      elements.coverageList.appendChild(row);
+    });
+
+    const metadataRow = document.createElement('div');
+    metadataRow.className = 'coverage-row';
+    const metadataIssues = getMetadataIssues();
+    const metadataStatus = metadataIssues.some((item) => item.level === 'err')
+      ? 'err'
+      : metadataIssues.length > 0
+      ? 'warn'
+      : 'ok';
+    metadataRow.innerHTML = `
+      <div>
+        <strong>Metadata</strong>
+        <span>Listing title, descriptions, links, and release notes</span>
+      </div>
+      <span class="pill ${metadataStatus}">${metadataStatus === 'ok' ? 'Ready' : metadataStatus === 'warn' ? 'Review' : 'Action'}</span>
+    `;
+    elements.coverageList.appendChild(metadataRow);
+  }
+
+  function renderPreview() {
+    const canvas = elements.previewCanvas;
+    const context = canvas.getContext('2d');
+
+    if (isMetadataTab()) {
+      state.ui.drag = null;
+      elements.emptyPreview.classList.remove('hidden');
+      elements.previewCaption.textContent = 'Metadata mode: use right panel for policy and coverage checks.';
+      elements.emptyPreview.textContent = 'Metadata does not render image output. Switch to an asset tab for live graphics preview.';
+      canvas.classList.add('hidden');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const spec = getActiveSpec();
+    const selectedAsset = getSelectedAsset();
+
+    if (!selectedAsset) {
+      state.ui.drag = null;
+      elements.emptyPreview.classList.remove('hidden');
+      elements.emptyPreview.textContent = `Upload at least one image in ${spec.label} to preview composed output.`;
+      elements.previewCaption.textContent = 'Preview updates instantly while you tweak styles and export sizing.';
+      canvas.classList.add('hidden');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const width = clampDimension(parseInt(elements.outputWidth.value, 10), 1, 7680);
+    const height = clampDimension(parseInt(elements.outputHeight.value, 10), 1, 7680);
+    state.output.width = width;
+    state.output.height = height;
+
+    drawComposition(canvas, selectedAsset, spec, width, height);
+
+    elements.previewCaption.textContent = `${spec.label} • ${selectedAsset.name} • ${width}×${height} • ratio ${ratioString(width / height)}`;
+    elements.emptyPreview.classList.add('hidden');
+    canvas.classList.remove('hidden');
+  }
+
+  function canvasPointFromEvent(event, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY,
+    };
+  }
+
+  function getDecorationAtPoint(asset, x, y, canvasWidth, canvasHeight) {
+    const decorations = ensureDecorations(asset);
+    for (let i = decorations.length - 1; i >= 0; i -= 1) {
+      const layer = decorations[i];
+      if (layer.visible === false) continue;
+      const cx = (layer.x / 100) * canvasWidth;
+      const cy = (layer.y / 100) * canvasHeight;
+      const radius = getDecorationHitRadiusPx(layer, canvasWidth, canvasHeight);
+      const dx = x - cx;
+      const dy = y - cy;
+      if (Math.sqrt(dx * dx + dy * dy) <= radius) {
+        return layer;
+      }
+    }
+    return null;
+  }
+
+  function handleCanvasPointerDown(event) {
+    if (isMetadataTab()) return;
+    const asset = getSelectedAsset();
+    const canvas = elements.previewCanvas;
+    if (!asset || canvas.classList.contains('hidden')) return;
+
+    const point = canvasPointFromEvent(event, canvas);
+    if (!point) return;
+
+    const hit = getDecorationAtPoint(asset, point.x, point.y, canvas.width, canvas.height);
+    if (!hit) return;
+
+    const cx = (hit.x / 100) * canvas.width;
+    const cy = (hit.y / 100) * canvas.height;
+    setSelectedDecorationId(asset, hit.id);
+    if (hit.locked) {
+      renderDecorationControls();
+      renderPreview();
+      return;
+    }
+    state.ui.drag = {
+      assetId: asset.id,
+      layerId: hit.id,
+      offsetX: point.x - cx,
+      offsetY: point.y - cy,
+      pointerId: event.pointerId,
+      moved: false,
+    };
+
+    renderDecorationControls();
+    renderPreview();
+    canvas.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  function handleCanvasPointerMove(event) {
+    const drag = state.ui.drag;
+    if (!drag) return;
+
+    const asset = getSelectedAsset();
+    const canvas = elements.previewCanvas;
+    if (!asset || asset.id !== drag.assetId || canvas.classList.contains('hidden')) return;
+
+    const point = canvasPointFromEvent(event, canvas);
+    if (!point) return;
+
+    const layer = ensureDecorations(asset).find((item) => item.id === drag.layerId);
+    if (!layer) return;
+    if (layer.locked) {
+      handleCanvasPointerUp(event);
+      return;
+    }
+
+    const nextX = ((point.x - drag.offsetX) / canvas.width) * 100;
+    const nextY = ((point.y - drag.offsetY) / canvas.height) * 100;
+    layer.x = Math.min(100, Math.max(0, nextX));
+    layer.y = Math.min(100, Math.max(0, nextY));
+    snapLayerPosition(layer);
+    drag.moved = true;
+
+    if (getSelectedDecorationId(asset) !== layer.id) {
+      setSelectedDecorationId(asset, layer.id);
+    }
+
+    elements.shapeXRange.value = layer.x;
+    elements.shapeYRange.value = layer.y;
+    updateDecorationOutputs(layer);
+    renderPreview();
+    event.preventDefault();
+  }
+
+  function handleCanvasPointerUp(event) {
+    if (!state.ui.drag) return;
+    const moved = state.ui.drag.moved;
+    const canvas = elements.previewCanvas;
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+    state.ui.drag = null;
+    if (moved) {
+      recordHistory();
+    }
+  }
+
+  function clampDimension(value, min, max) {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(max, Math.max(min, Math.round(value)));
+  }
+
+  function roundedRectPath(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function wrapTextLines(ctx, text, maxWidth, maxLines = 3) {
+    const words = (text || '').trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [];
+
+    const lines = [];
+    let line = '';
+
+    for (const word of words) {
+      const next = line ? `${line} ${word}` : word;
+      if (ctx.measureText(next).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+        if (lines.length >= maxLines - 1) {
+          break;
+        }
+      } else {
+        line = next;
+      }
+    }
+
+    if (line && lines.length < maxLines) {
+      lines.push(line);
+    }
+
+    if (lines.length === maxLines && words.join(' ').length > lines.join(' ').length) {
+      lines[maxLines - 1] = `${lines[maxLines - 1].replace(/[.,;:!?]$/, '')}…`;
+    }
+
+    return lines;
+  }
+
+  function fitContain(sourceWidth, sourceHeight, maxWidth, maxHeight) {
+    const ratio = sourceWidth / sourceHeight;
+    let width = maxWidth;
+    let height = width / ratio;
+
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * ratio;
+    }
+
+    return { width, height };
+  }
+
+  function drawBackground(ctx, overlay, width, height) {
+    if (overlay.bgStyle === 'solid') {
+      ctx.fillStyle = overlay.bgColor1;
+      ctx.fillRect(0, 0, width, height);
+    } else if (overlay.bgStyle === 'radial') {
+      const gradient = ctx.createRadialGradient(width * 0.3, height * 0.2, width * 0.1, width * 0.4, height * 0.4, width * 0.9);
+      gradient.addColorStop(0, overlay.bgColor2);
+      gradient.addColorStop(1, overlay.bgColor1);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, overlay.bgColor1);
+      gradient.addColorStop(1, overlay.bgColor2);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(1, width * 0.0012);
+    const step = Math.max(26, Math.round(width * 0.04));
+    for (let x = -height; x < width + height; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + height, height);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(width * 0.9, height * 0.12, Math.max(width, height) * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawTextBlock(ctx, overlay, width, height, safe) {
+    const alignMap = {
+      left: safe.x,
+      center: width / 2,
+      right: safe.x + safe.width,
+    };
+
+    const align = overlay.align || 'center';
+    const textX = alignMap[align];
+    ctx.textAlign = align;
+    ctx.textBaseline = 'top';
+
+    const titleFont = Math.round(clampDimension(height * 0.055, 24, 132));
+    const subtitleFont = Math.round(clampDimension(height * 0.028, 14, 58));
+    const badgeFont = Math.round(clampDimension(height * 0.019, 12, 34));
+
+    let cursorY = safe.y;
+
+    if (overlay.badge && overlay.badge.trim()) {
+      const badgeText = overlay.badge.trim();
+      ctx.font = `700 ${badgeFont}px "Sora", sans-serif`;
+      const badgeWidth = ctx.measureText(badgeText).width + badgeFont * 2.2;
+      const badgeHeight = badgeFont * 1.9;
+      let badgeX = textX;
+      if (align === 'left') badgeX += badgeWidth / 2;
+      if (align === 'right') badgeX -= badgeWidth / 2;
+
+      ctx.save();
+      ctx.globalAlpha = 0.96;
+      roundedRectPath(ctx, badgeX - badgeWidth / 2, cursorY, badgeWidth, badgeHeight, badgeHeight / 2);
+      ctx.fillStyle = overlay.badgeColor;
+      ctx.fill();
+      ctx.fillStyle = '#172530';
+      ctx.textAlign = 'center';
+      ctx.fillText(badgeText, badgeX, cursorY + badgeHeight * 0.22);
+      ctx.restore();
+
+      cursorY += badgeHeight + Math.round(height * 0.02);
+      ctx.textAlign = align;
+    }
+
+    if (overlay.title && overlay.title.trim()) {
+      ctx.font = `800 ${titleFont}px "Sora", sans-serif`;
+      const lines = wrapTextLines(ctx, overlay.title.trim(), safe.width, 3);
+      const lineHeight = titleFont * 1.12;
+      lines.forEach((line, index) => {
+        const y = cursorY + index * lineHeight;
+        ctx.save();
+        ctx.globalAlpha = 0.2;
+        ctx.fillStyle = '#07131d';
+        ctx.fillText(line, textX + 1.5, y + 2);
+        ctx.restore();
+        ctx.fillStyle = overlay.textColor;
+        ctx.fillText(line, textX, y);
+      });
+      cursorY += lines.length * lineHeight + Math.round(height * 0.015);
+    }
+
+    if (overlay.subtitle && overlay.subtitle.trim()) {
+      ctx.font = `600 ${subtitleFont}px "Manrope", sans-serif`;
+      const lines = wrapTextLines(ctx, overlay.subtitle.trim(), safe.width, 3);
+      const lineHeight = subtitleFont * 1.28;
+      ctx.fillStyle = overlay.subtitleColor;
+      lines.forEach((line, index) => {
+        ctx.fillText(line, textX, cursorY + index * lineHeight);
+      });
+      cursorY += lines.length * lineHeight + Math.round(height * 0.018);
+    }
+
+    return cursorY;
+  }
+
+  function drawDeviceFrame(ctx, asset, rect, overlay) {
+    const imageRatio = asset.width / asset.height;
+    const outer = fitContain(asset.width, asset.height, rect.width, rect.height);
+
+    const framePadding = Math.max(8, Math.round(Math.min(outer.width, outer.height) * 0.028));
+    const bezelTop = Math.max(10, Math.round(outer.height * 0.038));
+    const bezelBottom = Math.max(8, Math.round(outer.height * 0.032));
+
+    const innerWidth = outer.width - framePadding * 2;
+    const innerHeight = outer.height - framePadding * 2 - bezelTop - bezelBottom;
+
+    const fitted = fitContain(asset.width, asset.height, innerWidth, innerHeight);
+    const bodyWidth = fitted.width + framePadding * 2;
+    const bodyHeight = fitted.height + framePadding * 2 + bezelTop + bezelBottom;
+    const bodyX = rect.x + (rect.width - bodyWidth) / 2;
+    const bodyY = rect.y + (rect.height - bodyHeight) / 2;
+
+    const radius = Math.max(8, overlay.cornerRadius);
+    ctx.save();
+    ctx.shadowColor = `rgba(0, 0, 0, ${overlay.shadow / 130})`;
+    ctx.shadowBlur = Math.max(2, overlay.shadow * 0.9);
+    ctx.shadowOffsetY = Math.max(2, overlay.shadow * 0.28);
+    roundedRectPath(ctx, bodyX, bodyY, bodyWidth, bodyHeight, radius + 8);
+    ctx.fillStyle = '#0f1720';
+    ctx.fill();
+    ctx.restore();
+
+    roundedRectPath(ctx, bodyX, bodyY, bodyWidth, bodyHeight, radius + 8);
+    ctx.fillStyle = '#101821';
+    ctx.fill();
+
+    const screenX = bodyX + framePadding;
+    const screenY = bodyY + framePadding + bezelTop;
+    const screenRadius = Math.max(4, radius - 6);
+
+    roundedRectPath(ctx, screenX, screenY, fitted.width, fitted.height, screenRadius);
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(asset.image, screenX, screenY, fitted.width, fitted.height);
+    ctx.restore();
+
+    if (imageRatio < 1.05) {
+      const notchWidth = Math.min(bodyWidth * 0.3, 120);
+      const notchHeight = Math.max(8, bezelTop * 0.46);
+      const notchX = bodyX + (bodyWidth - notchWidth) / 2;
+      const notchY = bodyY + framePadding * 0.62;
+      roundedRectPath(ctx, notchX, notchY, notchWidth, notchHeight, notchHeight / 2);
+      ctx.fillStyle = '#05080b';
+      ctx.fill();
+    }
+  }
+
+  function drawFloatingFrame(ctx, asset, rect, overlay) {
+    const fitted = fitContain(asset.width, asset.height, rect.width, rect.height);
+    const x = rect.x + (rect.width - fitted.width) / 2;
+    const y = rect.y + (rect.height - fitted.height) / 2;
+
+    ctx.save();
+    ctx.shadowColor = `rgba(10, 24, 38, ${overlay.shadow / 115})`;
+    ctx.shadowBlur = Math.max(2, overlay.shadow * 1.1);
+    ctx.shadowOffsetY = Math.max(2, overlay.shadow * 0.3);
+    roundedRectPath(ctx, x, y, fitted.width, fitted.height, overlay.cornerRadius);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fill();
+    ctx.restore();
+
+    roundedRectPath(ctx, x, y, fitted.width, fitted.height, overlay.cornerRadius);
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(asset.image, x, y, fitted.width, fitted.height);
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = Math.max(1, rect.width * 0.003);
+    roundedRectPath(ctx, x, y, fitted.width, fitted.height, overlay.cornerRadius);
+    ctx.stroke();
+  }
+
+  function drawRawFrame(ctx, asset, rect, overlay) {
+    const fitted = fitContain(asset.width, asset.height, rect.width, rect.height);
+    const x = rect.x + (rect.width - fitted.width) / 2;
+    const y = rect.y + (rect.height - fitted.height) / 2;
+
+    roundedRectPath(ctx, x, y, fitted.width, fitted.height, overlay.cornerRadius);
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(asset.image, x, y, fitted.width, fitted.height);
+    ctx.restore();
+  }
+
+  function drawSafeArea(ctx, safeRect) {
+    ctx.save();
+    ctx.setLineDash([10, 8]);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.lineWidth = Math.max(1, safeRect.width * 0.0025);
+    ctx.strokeRect(safeRect.x, safeRect.y, safeRect.width, safeRect.height);
+    ctx.restore();
+  }
+
+  function drawGuidesOverlay(ctx, width, height) {
+    const guides = state.ui.guides;
+    if (!guides.showGrid && !guides.showCenterGuides) return;
+
+    ctx.save();
+
+    if (guides.showGrid) {
+      const step = Math.max(4, guides.gridSize || 16);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1;
+      for (let x = step; x < width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
+        ctx.stroke();
+      }
+      for (let y = step; y < height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+      }
+    }
+
+    if (guides.showCenterGuides) {
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.38)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(width / 2, 0);
+      ctx.lineTo(width / 2, height);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function getDecorationSizePx(layer, width, height) {
+    return Math.max(14, Math.min(width, height) * ((layer?.size || 12) / 100));
+  }
+
+  function getDecorationHitRadiusPx(layer, width, height) {
+    return getDecorationSizePx(layer, width, height) * 0.66 + Math.max(4, layer.strokeWidth || 0);
+  }
+
+  function traceStarPath(ctx, radius) {
+    const inner = radius * 0.46;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i += 1) {
+      const angle = (Math.PI / 5) * i - Math.PI / 2;
+      const r = i % 2 === 0 ? radius : inner;
+      const x = Math.cos(angle) * r;
+      const y = Math.sin(angle) * r;
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.closePath();
+  }
+
+  function traceDecorationPath(ctx, kind, size) {
+    if (kind === 'circle') {
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.5, 0, Math.PI * 2);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'triangle') {
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 0.56);
+      ctx.lineTo(size * 0.56, size * 0.42);
+      ctx.lineTo(-size * 0.56, size * 0.42);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'star') {
+      traceStarPath(ctx, size * 0.56);
+      return;
+    }
+
+    if (kind === 'diamond') {
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 0.58);
+      ctx.lineTo(size * 0.48, 0);
+      ctx.lineTo(0, size * 0.58);
+      ctx.lineTo(-size * 0.48, 0);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'hexagon') {
+      const r = size * 0.52;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i += 1) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'heart') {
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.48);
+      ctx.bezierCurveTo(size * 0.66, size * 0.02, size * 0.52, -size * 0.56, 0, -size * 0.24);
+      ctx.bezierCurveTo(-size * 0.52, -size * 0.56, -size * 0.66, size * 0.02, 0, size * 0.48);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'plus') {
+      const arm = size * 0.2;
+      const half = size * 0.56;
+      ctx.beginPath();
+      ctx.moveTo(-arm, -half);
+      ctx.lineTo(arm, -half);
+      ctx.lineTo(arm, -arm);
+      ctx.lineTo(half, -arm);
+      ctx.lineTo(half, arm);
+      ctx.lineTo(arm, arm);
+      ctx.lineTo(arm, half);
+      ctx.lineTo(-arm, half);
+      ctx.lineTo(-arm, arm);
+      ctx.lineTo(-half, arm);
+      ctx.lineTo(-half, -arm);
+      ctx.lineTo(-arm, -arm);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'bolt') {
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.12, -size * 0.58);
+      ctx.lineTo(size * 0.2, -size * 0.15);
+      ctx.lineTo(size * 0.02, -size * 0.15);
+      ctx.lineTo(size * 0.2, size * 0.58);
+      ctx.lineTo(-size * 0.22, size * 0.1);
+      ctx.lineTo(-size * 0.04, size * 0.1);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'play') {
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.25, -size * 0.38);
+      ctx.lineTo(size * 0.4, 0);
+      ctx.lineTo(-size * 0.25, size * 0.38);
+      ctx.closePath();
+      return;
+    }
+
+    if (kind === 'rect') {
+      roundedRectPath(ctx, -size * 0.65, -size * 0.42, size * 1.3, size * 0.84, Math.max(2, size * 0.14));
+      return;
+    }
+
+    ctx.beginPath();
+    ctx.rect(-size * 0.5, -size * 0.5, size, size);
+    ctx.closePath();
+  }
+
+  function drawDecorationLayer(ctx, layer, canvasWidth, canvasHeight, selected) {
+    if (layer.visible === false) return;
+
+    const size = getDecorationSizePx(layer, canvasWidth, canvasHeight);
+    const x = (layer.x / 100) * canvasWidth;
+    const y = (layer.y / 100) * canvasHeight;
+    const rotation = (layer.rotation || 0) * (Math.PI / 180);
+    const flipX = layer.flipX ? -1 : 1;
+    const flipY = layer.flipY ? -1 : 1;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.scale(flipX, flipY);
+    ctx.globalAlpha = Math.max(0.1, Math.min(1, (layer.opacity || 100) / 100));
+    ctx.globalCompositeOperation = layer.blendMode || 'source-over';
+    if ((layer.layerShadow || 0) > 0) {
+      ctx.shadowColor = `rgba(7, 17, 26, ${Math.min(0.8, layer.layerShadow / 140)})`;
+      ctx.shadowBlur = (layer.layerShadow / 100) * Math.max(6, size * 0.7);
+      ctx.shadowOffsetY = (layer.layerShadow / 100) * Math.max(2, size * 0.16);
+    }
+
+    if (layer.kind === 'check') {
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.48, -size * 0.02);
+      ctx.lineTo(-size * 0.12, size * 0.34);
+      ctx.lineTo(size * 0.52, -size * 0.34);
+      ctx.strokeStyle = layer.stroke || '#14532d';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(2, layer.strokeWidth || 6);
+      ctx.stroke();
+    } else {
+      traceDecorationPath(ctx, layer.kind, size);
+      ctx.fillStyle = layer.fill || '#ffffff';
+      ctx.fill();
+
+      if ((layer.strokeWidth || 0) > 0) {
+        ctx.strokeStyle = layer.stroke || '#102a43';
+        ctx.lineWidth = layer.strokeWidth;
+        ctx.stroke();
+      }
+    }
+
+    if (selected) {
+      const halo = getDecorationHitRadiusPx(layer, canvasWidth, canvasHeight);
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.setLineDash([7, 5]);
+      ctx.lineWidth = Math.max(1, canvasWidth * 0.0022);
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, halo, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawDecorations(ctx, asset, canvasWidth, canvasHeight) {
+    const decorations = ensureDecorations(asset);
+    if (decorations.length === 0) return;
+
+    const selectedId = getSelectedDecorationId(asset);
+    decorations.forEach((layer) => {
+      drawDecorationLayer(ctx, layer, canvasWidth, canvasHeight, layer.id === selectedId);
+    });
+  }
+
+  function drawComposition(canvas, asset, spec, width, height) {
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    const overlay = asset.overlay || defaultOverlay();
+
+    drawBackground(ctx, overlay, width, height);
+    drawGuidesOverlay(ctx, width, height);
+
+    const safeRect = {
+      x: Math.round(width * 0.06),
+      y: Math.round(height * 0.05),
+      width: Math.round(width * 0.88),
+      height: Math.round(height * 0.9),
+    };
+
+    const textBottom = drawTextBlock(ctx, overlay, width, height, safeRect);
+
+    const mediaTop = Math.min(textBottom + Math.round(height * 0.02), safeRect.y + safeRect.height * 0.6);
+    const mediaHeight = Math.max(10, safeRect.y + safeRect.height - mediaTop);
+    const mediaWidth = safeRect.width * (overlay.scale / 100);
+    const mediaRect = {
+      x: safeRect.x + (safeRect.width - mediaWidth) / 2,
+      y: mediaTop,
+      width: mediaWidth,
+      height: mediaHeight,
+    };
+
+    if (overlay.frameStyle === 'raw') {
+      drawRawFrame(ctx, asset, mediaRect, overlay);
+    } else if (overlay.frameStyle === 'floating') {
+      drawFloatingFrame(ctx, asset, mediaRect, overlay);
+    } else {
+      drawDeviceFrame(ctx, asset, mediaRect, overlay);
+    }
+
+    if (overlay.safeArea) {
+      drawSafeArea(ctx, safeRect);
+    }
+
+    drawDecorations(ctx, asset, width, height);
+  }
+
+  function getCurrentOutputConfig() {
+    const width = clampDimension(parseInt(elements.outputWidth.value, 10), 1, 7680);
+    const height = clampDimension(parseInt(elements.outputHeight.value, 10), 1, 7680);
+    const format = elements.outputFormat.value;
+    const quality = clampDimension(parseInt(elements.jpegQuality.value, 10), 65, 100);
+
+    state.output.width = width;
+    state.output.height = height;
+    state.output.format = format;
+    state.output.jpegQuality = quality;
+    state.output.lockRatio = elements.lockRatioToggle.checked;
+
+    return { width, height, format, quality };
+  }
+
+  function canvasToBlob(canvas, format, quality) {
+    return new Promise((resolve, reject) => {
+      const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const qualityValue = format === 'jpeg' ? quality / 100 : undefined;
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Could not create export blob.'));
+          return;
+        }
+        resolve(blob);
+      }, mime, qualityValue);
+    });
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1200);
+  }
+
+  async function exportSelected() {
+    if (isMetadataTab()) {
+      window.alert('Switch to an asset tab to export graphics.');
+      return;
+    }
+
+    const selected = getSelectedAsset();
+    const spec = getActiveSpec();
+    if (!selected) {
+      window.alert('No selected asset to export.');
+      return;
+    }
+
+    const { width, height, format, quality } = getCurrentOutputConfig();
+    const canvas = document.createElement('canvas');
+    drawComposition(canvas, selected, spec, width, height);
+
+    const blob = await canvasToBlob(canvas, format, quality);
+    const safeName = sanitizeFileName(`${spec.id}_${getSelectedIndex() + 1}.${format === 'jpeg' ? 'jpg' : 'png'}`);
+    downloadBlob(blob, safeName);
+  }
+
+  async function exportCurrentTab() {
+    if (isMetadataTab()) {
+      window.alert('Switch to an asset tab to export graphics.');
+      return;
+    }
+
+    const spec = getActiveSpec();
+    const assets = getAssetsForTab();
+    if (assets.length === 0) {
+      window.alert('No assets in current tab to export.');
+      return;
+    }
+
+    const { width, height, format, quality } = getCurrentOutputConfig();
+    const extension = format === 'jpeg' ? 'jpg' : 'png';
+
+    if (assets.length === 1 || typeof window.JSZip === 'undefined') {
+      if (assets.length > 1 && typeof window.JSZip === 'undefined') {
+        window.alert('ZIP library failed to load. Falling back to individual downloads.');
+      }
+      for (let index = 0; index < assets.length; index += 1) {
+        const asset = assets[index];
+        const canvas = document.createElement('canvas');
+        drawComposition(canvas, asset, spec, width, height);
+        const blob = await canvasToBlob(canvas, format, quality);
+        const fileName = sanitizeFileName(`${spec.id}_${index + 1}.${extension}`);
+        downloadBlob(blob, fileName);
+        await wait(240);
+      }
+      return;
+    }
+
+    const zip = new window.JSZip();
+    for (let index = 0; index < assets.length; index += 1) {
+      const asset = assets[index];
+      const canvas = document.createElement('canvas');
+      drawComposition(canvas, asset, spec, width, height);
+      const blob = await canvasToBlob(canvas, format, quality);
+      const fileName = sanitizeFileName(`${spec.id}_${index + 1}.${extension}`);
+      zip.file(fileName, blob);
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    const zipName = sanitizeFileName(`${spec.id}_${width}x${height}.zip`);
+    downloadBlob(zipBlob, zipName);
+  }
+
+  async function exportAllTabs() {
+    const tabsWithAssets = ASSET_SPECS
+      .map((spec) => ({ spec, assets: state.assets[spec.id] || [] }))
+      .filter((entry) => entry.assets.length > 0);
+
+    if (tabsWithAssets.length === 0) {
+      window.alert('No assets found across tabs to export.');
+      return;
+    }
+
+    const { format, quality } = getCurrentOutputConfig();
+    const extension = format === 'jpeg' ? 'jpg' : 'png';
+
+    if (typeof window.JSZip === 'undefined') {
+      window.alert('ZIP library failed to load. Falling back to individual downloads.');
+      for (let tabIndex = 0; tabIndex < tabsWithAssets.length; tabIndex += 1) {
+        const entry = tabsWithAssets[tabIndex];
+        for (let assetIndex = 0; assetIndex < entry.assets.length; assetIndex += 1) {
+          const asset = entry.assets[assetIndex];
+          const targetSize = getRecommendedSize(entry.spec, asset);
+          const canvas = document.createElement('canvas');
+          drawComposition(canvas, asset, entry.spec, targetSize.width, targetSize.height);
+          const blob = await canvasToBlob(canvas, format, quality);
+          const fileName = sanitizeFileName(`${entry.spec.id}_${assetIndex + 1}_${targetSize.width}x${targetSize.height}.${extension}`);
+          downloadBlob(blob, fileName);
+          await wait(180);
+        }
+      }
+      return;
+    }
+
+    const zip = new window.JSZip();
+    const manifest = serializeManifest();
+    const summary = [];
+
+    for (let tabIndex = 0; tabIndex < tabsWithAssets.length; tabIndex += 1) {
+      const entry = tabsWithAssets[tabIndex];
+      const folder = zip.folder(entry.spec.id);
+      summary.push(`${entry.spec.label}: ${entry.assets.length} asset(s)`);
+
+      for (let assetIndex = 0; assetIndex < entry.assets.length; assetIndex += 1) {
+        const asset = entry.assets[assetIndex];
+        const targetSize = getRecommendedSize(entry.spec, asset);
+        const canvas = document.createElement('canvas');
+        drawComposition(canvas, asset, entry.spec, targetSize.width, targetSize.height);
+        const blob = await canvasToBlob(canvas, format, quality);
+        const fileName = sanitizeFileName(`${entry.spec.id}_${assetIndex + 1}_${targetSize.width}x${targetSize.height}.${extension}`);
+        folder.file(fileName, blob);
+      }
+    }
+
+    zip.file('playstore_manifest.json', JSON.stringify(manifest, null, 2));
+    zip.file('README.txt', `Play Console Export Bundle
+Generated: ${new Date().toISOString()}
+Output Mode: Per-tab policy dimensions (${format.toUpperCase()})
+
+Included tabs:
+- ${summary.join('\n- ')}
+`);
+
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    const zipName = sanitizeFileName(`playstore_bundle_policy_sizes.zip`);
+    downloadBlob(zipBlob, zipName);
+  }
+
+  function wait(milliseconds) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  }
+
+  function sanitizeFileName(name) {
+    return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function loadSelectedOverlayToControls() {
+    if (isMetadataTab()) return;
+
+    const selected = getSelectedAsset();
+    const overlay = selected ? selected.overlay : defaultOverlay();
+
+    elements.stylePreset.value = overlay.stylePreset || 'launch';
+    elements.bgStyle.value = overlay.bgStyle;
+    elements.bgColor1.value = overlay.bgColor1;
+    elements.bgColor2.value = overlay.bgColor2;
+    elements.titleText.value = overlay.title;
+    elements.subtitleText.value = overlay.subtitle;
+    elements.badgeText.value = overlay.badge;
+    elements.textColor.value = overlay.textColor;
+    elements.subtitleColor.value = overlay.subtitleColor;
+    elements.badgeColor.value = overlay.badgeColor;
+    elements.scaleRange.value = overlay.scale;
+    elements.shadowRange.value = overlay.shadow;
+    elements.radiusRange.value = overlay.cornerRadius;
+    elements.safeAreaToggle.checked = overlay.safeArea;
+
+    elements.scaleOutput.textContent = `${overlay.scale}%`;
+    elements.shadowOutput.textContent = `${overlay.shadow}%`;
+    elements.radiusOutput.textContent = `${overlay.cornerRadius}px`;
+
+    Array.from(elements.alignRow.querySelectorAll('.chip')).forEach((chip) => {
+      chip.classList.toggle('active', chip.dataset.align === overlay.align);
+    });
+
+    Array.from(elements.frameRow.querySelectorAll('.chip')).forEach((chip) => {
+      chip.classList.toggle('active', chip.dataset.frame === overlay.frameStyle);
+    });
+
+    renderDecorationControls();
+  }
+
+  function writeOverlayFromControls() {
+    const selected = getSelectedAsset();
+    if (!selected) return;
+
+    const activeAlign = elements.alignRow.querySelector('.chip.active')?.dataset.align || 'center';
+    const activeFrame = elements.frameRow.querySelector('.chip.active')?.dataset.frame || 'device';
+
+    selected.overlay = {
+      ...selected.overlay,
+      stylePreset: elements.stylePreset.value,
+      bgStyle: elements.bgStyle.value,
+      bgColor1: elements.bgColor1.value,
+      bgColor2: elements.bgColor2.value,
+      title: elements.titleText.value,
+      subtitle: elements.subtitleText.value,
+      badge: elements.badgeText.value,
+      textColor: elements.textColor.value,
+      subtitleColor: elements.subtitleColor.value,
+      badgeColor: elements.badgeColor.value,
+      align: activeAlign,
+      frameStyle: activeFrame,
+      scale: clampDimension(parseInt(elements.scaleRange.value, 10), 65, 100),
+      shadow: clampDimension(parseInt(elements.shadowRange.value, 10), 0, 80),
+      cornerRadius: clampDimension(parseInt(elements.radiusRange.value, 10), 0, 80),
+      safeArea: elements.safeAreaToggle.checked,
+    };
+
+    elements.scaleOutput.textContent = `${selected.overlay.scale}%`;
+    elements.shadowOutput.textContent = `${selected.overlay.shadow}%`;
+    elements.radiusOutput.textContent = `${selected.overlay.cornerRadius}px`;
+  }
+
+  function applyStylePresetToSelected(presetKey, rerender = true) {
+    const selected = getSelectedAsset();
+    const preset = STYLE_PRESETS[presetKey];
+    if (!selected || !preset) return;
+
+    selected.overlay = {
+      ...selected.overlay,
+      ...preset,
+      stylePreset: presetKey,
+    };
+
+    loadSelectedOverlayToControls();
+    if (rerender) {
+      renderPreview();
+      renderAssetList();
+    }
+  }
+
+  function applyStyleToCurrentTab() {
+    if (isMetadataTab()) return;
+
+    const selected = getSelectedAsset();
+    if (!selected) {
+      window.alert('Select an asset first to copy its style across the tab.');
+      return;
+    }
+
+    const assets = getAssetsForTab();
+    assets.forEach((asset) => {
+      asset.overlay = cloneOverlay(selected.overlay);
+    });
+
+    renderAll();
+    recordHistory();
+  }
+
+  function clearCurrentTab() {
+    if (isMetadataTab()) return;
+
+    const spec = getActiveSpec();
+    if (!window.confirm(`Clear all assets in ${spec.label}?`)) {
+      return;
+    }
+
+    state.assets[spec.id] = [];
+    state.selected[spec.id] = -1;
+    renderAll();
+    recordHistory();
+  }
+
+  function resetProject() {
+    if (!window.confirm('Start a new project and clear all assets and metadata?')) {
+      return;
+    }
+
+    ASSET_SPECS.forEach((spec) => {
+      state.assets[spec.id] = [];
+      state.selected[spec.id] = -1;
+    });
+
+    state.metadata = {
+      appName: '',
+      shortDescription: '',
+      fullDescription: '',
+      category: 'Productivity',
+      supportEmail: '',
+      privacyPolicyUrl: '',
+      releaseNotes: '',
+    };
+
+    state.output = {
+      width: null,
+      height: null,
+      format: 'png',
+      jpegQuality: 92,
+      lockRatio: true,
+      ratio: 1,
+      lastSpecId: null,
+    };
+
+    state.ui.decorationSelection = {};
+    state.ui.drag = null;
+    state.ui.guides = {
+      showGrid: false,
+      showCenterGuides: true,
+      snapToGrid: false,
+      gridSize: 16,
+    };
+
+    state.activeTab = ASSET_SPECS[0].id;
+    buildMetadataFields();
+    renderAll();
+    resetHistory();
+  }
+
+  function serializeProject() {
+    return {
+      app: 'PlayConsoleCreativeStudio',
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      activeTab: state.activeTab,
+      output: {
+        format: state.output.format,
+        jpegQuality: state.output.jpegQuality,
+        lockRatio: state.output.lockRatio,
+      },
+      guides: {
+        ...state.ui.guides,
+      },
+      metadata: {
+        ...state.metadata,
+      },
+      assets: Object.fromEntries(
+        ASSET_SPECS.map((spec) => [
+          spec.id,
+          state.assets[spec.id].map((asset) => ({
+            id: asset.id,
+            name: asset.name,
+            type: asset.type,
+            size: asset.size,
+            width: asset.width,
+            height: asset.height,
+            dataUrl: asset.dataUrl,
+            overlay: { ...asset.overlay },
+          })),
+        ])
+      ),
+    };
+  }
+
+  function serializeManifest() {
+    return {
+      generatedAt: new Date().toISOString(),
+      metadata: { ...state.metadata },
+      coverage: ASSET_SPECS.map((spec) => {
+        const assets = state.assets[spec.id];
+        return {
+          id: spec.id,
+          label: spec.label,
+          loaded: assets.length,
+          minRequired: spec.minCount,
+          maxAllowed: spec.maxCount,
+          status: getTabStatus(spec.id),
+          note: spec.note,
+          items: assets.map((asset) => ({
+            name: asset.name,
+            width: asset.width,
+            height: asset.height,
+            sizeBytes: asset.size,
+            issues: [...asset.issues],
+            warnings: [...asset.warnings],
+          })),
+        };
+      }),
+      metadataIssues: getMetadataIssues(),
+    };
+  }
+
+  function downloadJson(data, fileNamePrefix) {
+    const stamp = new Date().toISOString().replace(/[\-:.TZ]/g, '').slice(0, 14);
+    const fileName = `${fileNamePrefix}_${stamp}.json`;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, fileName);
+  }
+
+  async function importProjectJson(file) {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+
+    if (!parsed || typeof parsed !== 'object' || !parsed.assets) {
+      throw new Error('Invalid project JSON structure.');
+    }
+
+    const nextAssets = Object.fromEntries(ASSET_SPECS.map((spec) => [spec.id, []]));
+
+    for (const spec of ASSET_SPECS) {
+      const rawItems = Array.isArray(parsed.assets[spec.id]) ? parsed.assets[spec.id].slice(0, spec.maxCount) : [];
+      for (const raw of rawItems) {
+        if (!raw || typeof raw.dataUrl !== 'string') continue;
+        const image = await loadImageFromDataUrl(raw.dataUrl);
+        const asset = {
+          id: raw.id || ((self.crypto && typeof self.crypto.randomUUID === 'function') ? self.crypto.randomUUID() : `asset_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`),
+          name: raw.name || `${spec.id}_${nextAssets[spec.id].length + 1}.png`,
+          type: raw.type || 'image/png',
+          size: Number(raw.size) || Math.ceil(raw.dataUrl.length * 0.75),
+          width: Number(raw.width) || image.width,
+          height: Number(raw.height) || image.height,
+          dataUrl: raw.dataUrl,
+          image,
+          overlay: cloneOverlay(raw.overlay),
+          issues: [],
+          warnings: [],
+        };
+        validateAsset(asset, spec);
+        nextAssets[spec.id].push(asset);
+      }
+    }
+
+    ASSET_SPECS.forEach((spec) => {
+      state.assets[spec.id] = nextAssets[spec.id];
+      state.selected[spec.id] = nextAssets[spec.id].length > 0 ? 0 : -1;
+    });
+
+    state.ui.decorationSelection = {};
+    state.ui.drag = null;
+
+    if (parsed.metadata && typeof parsed.metadata === 'object') {
+      state.metadata = {
+        ...state.metadata,
+        ...parsed.metadata,
+      };
+    }
+
+    if (parsed.output && typeof parsed.output === 'object') {
+      state.output = {
+        ...state.output,
+        format: parsed.output.format === 'jpeg' ? 'jpeg' : 'png',
+        jpegQuality: clampDimension(parseInt(parsed.output.jpegQuality, 10), 65, 100),
+        lockRatio: parsed.output.lockRatio !== false,
+        lastSpecId: null,
+      };
+    }
+
+    if (parsed.guides && typeof parsed.guides === 'object') {
+      state.ui.guides = {
+        ...state.ui.guides,
+        showGrid: parsed.guides.showGrid === true,
+        showCenterGuides: parsed.guides.showCenterGuides !== false,
+        snapToGrid: parsed.guides.snapToGrid === true,
+        gridSize: clampDimension(parseInt(parsed.guides.gridSize, 10), 4, 80),
+      };
+    }
+
+    const tabValid = parsed.activeTab === 'metadata' || ASSET_SPECS.some((spec) => spec.id === parsed.activeTab);
+    state.activeTab = tabValid ? parsed.activeTab : ASSET_SPECS[0].id;
+
+    buildMetadataFields();
+    renderAll();
+    resetHistory();
+  }
+
+  function renderMetadataPreview() {
+    const data = state.metadata;
+    elements.metadataPreview.innerHTML = `
+      <h3>${escapeHtml(data.appName || 'App name not set')}</h3>
+      <p><strong>Category:</strong> ${escapeHtml(data.category || 'Not set')}</p>
+      <p style="margin-top:6px;">${escapeHtml(data.shortDescription || 'Short description not provided yet.')}</p>
+      <p style="margin-top:8px;">${escapeHtml(data.fullDescription || 'Full description not provided yet.')}</p>
+      <p style="margin-top:8px;"><strong>Support:</strong> ${escapeHtml(data.supportEmail || '-')}</p>
+      <p><strong>Privacy Policy:</strong> ${escapeHtml(data.privacyPolicyUrl || '-')}</p>
+      <p><strong>Release Notes:</strong> ${escapeHtml(data.releaseNotes || '-')}</p>
+    `;
+  }
+
+  function getMetadataIssues() {
+    const issues = [];
+    const data = state.metadata;
+
+    if (!data.appName.trim()) {
+      issues.push({ level: 'err', message: 'App name is empty.' });
+    }
+
+    if ((data.appName || '').length > 30) {
+      issues.push({ level: 'err', message: 'App name exceeds 30 characters.' });
+    }
+
+    if (!data.shortDescription.trim()) {
+      issues.push({ level: 'warn', message: 'Short description is empty.' });
+    }
+
+    if ((data.shortDescription || '').length > 80) {
+      issues.push({ level: 'err', message: 'Short description exceeds 80 characters.' });
+    }
+
+    if (!data.fullDescription.trim()) {
+      issues.push({ level: 'warn', message: 'Full description is empty.' });
+    }
+
+    if ((data.fullDescription || '').length > 4000) {
+      issues.push({ level: 'err', message: 'Full description exceeds 4000 characters.' });
+    }
+
+    if (data.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.supportEmail)) {
+      issues.push({ level: 'warn', message: 'Support email format looks invalid.' });
+    }
+
+    if (data.privacyPolicyUrl && !/^https?:\/\//i.test(data.privacyPolicyUrl)) {
+      issues.push({ level: 'warn', message: 'Privacy policy URL should start with http:// or https://.' });
+    }
+
+    return issues;
+  }
+
+  function renderMetadataChecklist() {
+    elements.metadataChecklist.innerHTML = '';
+
+    const checks = [
+      {
+        label: 'Avoid prohibited claims or misleading pricing language in image text and descriptions.',
+      },
+      {
+        label: 'Ensure screenshots represent in-app experience and not external mockups only.',
+      },
+      {
+        label: 'Keep privacy policy URL reachable and aligned with data safety form.',
+      },
+      {
+        label: 'Verify localized metadata and screenshots before release in each region.',
+      },
+    ];
+
+    checks.forEach((check) => {
+      const row = document.createElement('div');
+      row.className = 'status-row';
+      row.textContent = check.label;
+      elements.metadataChecklist.appendChild(row);
+    });
+
+    const issues = getMetadataIssues();
+    if (issues.length > 0) {
+      issues.forEach((issue) => {
+        const row = document.createElement('div');
+        row.className = issue.level === 'err' ? 'status-row err' : 'status-row warn';
+        row.textContent = issue.message;
+        elements.metadataChecklist.appendChild(row);
+      });
+    } else {
+      const row = document.createElement('div');
+      row.className = 'status-row ok';
+      row.textContent = 'Metadata fields pass local checks.';
+      elements.metadataChecklist.appendChild(row);
+    }
+  }
+
+  function buildMetadataFields() {
+    elements.metadataFields.innerHTML = '';
+
+    METADATA_FIELDS.forEach((fieldDef) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'field';
+
+      const label = document.createElement('label');
+      label.textContent = fieldDef.label;
+      label.htmlFor = `meta_${fieldDef.key}`;
+      wrapper.appendChild(label);
+
+      let input;
+      if (fieldDef.type === 'textarea') {
+        input = document.createElement('textarea');
+      } else if (fieldDef.type === 'select') {
+        input = document.createElement('select');
+        (fieldDef.options || []).forEach((option) => {
+          const optionNode = document.createElement('option');
+          optionNode.value = option;
+          optionNode.textContent = option;
+          input.appendChild(optionNode);
+        });
+      } else {
+        input = document.createElement('input');
+        input.type = fieldDef.type;
+      }
+
+      input.id = `meta_${fieldDef.key}`;
+      input.dataset.metaKey = fieldDef.key;
+      if (fieldDef.placeholder) input.placeholder = fieldDef.placeholder;
+      input.value = state.metadata[fieldDef.key] || '';
+
+      wrapper.appendChild(input);
+
+      if (fieldDef.max) {
+        const counter = document.createElement('div');
+        counter.className = 'counter';
+        counter.id = `counter_${fieldDef.key}`;
+        wrapper.appendChild(counter);
+      }
+
+      if (fieldDef.type === 'textarea') {
+        wrapper.classList.add('full');
+      }
+
+      elements.metadataFields.appendChild(wrapper);
+
+      input.addEventListener('input', () => {
+        state.metadata[fieldDef.key] = input.value;
+        updateMetadataCounter(fieldDef, input.value);
+        renderMetadataPreview();
+        renderMetadataChecklist();
+        renderCoverage();
+        renderValidation();
+      });
+
+      input.addEventListener('change', () => {
+        state.metadata[fieldDef.key] = input.value;
+        updateMetadataCounter(fieldDef, input.value);
+        recordHistory();
+      });
+
+      updateMetadataCounter(fieldDef, input.value);
+    });
+  }
+
+  function updateMetadataCounter(fieldDef, value) {
+    if (!fieldDef.max) return;
+    const counter = document.getElementById(`counter_${fieldDef.key}`);
+    if (!counter) return;
+
+    const count = (value || '').length;
+    counter.textContent = `${count}/${fieldDef.max}`;
+    counter.classList.toggle('over', count > fieldDef.max);
+  }
+
+  function loadSectionState() {
+    try {
+      const raw = window.localStorage.getItem(SECTION_STATE_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return {};
+      return parsed;
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveSectionState() {
+    try {
+      window.localStorage.setItem(SECTION_STATE_STORAGE_KEY, JSON.stringify(state.ui.sectionOpen));
+    } catch (error) {
+      // Ignore storage failures (private mode/quota)
+    }
+  }
+
+  function getDirectDetailsChildren(container) {
+    return Array.from(container.children).filter((child) => child.tagName === 'DETAILS');
+  }
+
+  function enforceSingleOpenAccordion(container) {
+    const sections = getDirectDetailsChildren(container);
+    let foundOpen = false;
+    sections.forEach((section) => {
+      if (!section.open) return;
+      if (foundOpen) {
+        section.open = false;
+        return;
+      }
+      foundOpen = true;
+    });
+  }
+
+  function setupCompactSections() {
+    state.ui.sectionOpen = loadSectionState();
+
+    const rememberedSections = Array.from(document.querySelectorAll('details[data-remember-open][id]'));
+    rememberedSections.forEach((section) => {
+      if (Object.prototype.hasOwnProperty.call(state.ui.sectionOpen, section.id)) {
+        section.open = Boolean(state.ui.sectionOpen[section.id]);
+      }
+
+      section.addEventListener('toggle', () => {
+        state.ui.sectionOpen[section.id] = section.open;
+        saveSectionState();
+      });
+    });
+
+    const singleAccordions = Array.from(document.querySelectorAll('[data-accordion="single"]'));
+    singleAccordions.forEach((container) => {
+      enforceSingleOpenAccordion(container);
+
+      container.addEventListener('toggle', (event) => {
+        const openedSection = event.target;
+        if (!openedSection || openedSection.tagName !== 'DETAILS' || !openedSection.open) return;
+
+        const siblings = getDirectDetailsChildren(container);
+        if (!siblings.includes(openedSection)) return;
+
+        siblings.forEach((section) => {
+          if (section !== openedSection && section.open) {
+            section.open = false;
+          }
+        });
+      }, true);
+    });
+  }
+
+  function bindEvents() {
+    document.getElementById('browseAssetsBtn').addEventListener('click', () => {
+      if (!isMetadataTab()) {
+        elements.assetInput.click();
+      }
+    });
+
+    elements.uploadDropzone.addEventListener('click', () => {
+      if (!isMetadataTab()) {
+        elements.assetInput.click();
+      }
+    });
+
+    elements.assetInput.addEventListener('change', async (event) => {
+      await handleAssetFiles(event.target.files);
+      event.target.value = '';
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      elements.uploadDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        if (!isMetadataTab()) {
+          elements.uploadDropzone.classList.add('dragover');
+        }
+      });
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+      elements.uploadDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        elements.uploadDropzone.classList.remove('dragover');
+      });
+    });
+
+    elements.uploadDropzone.addEventListener('drop', async (event) => {
+      if (isMetadataTab()) return;
+      const files = event.dataTransfer?.files;
+      await handleAssetFiles(files);
+    });
+
+    document.getElementById('clearTabBtn').addEventListener('click', clearCurrentTab);
+    document.getElementById('newProjectBtn').addEventListener('click', resetProject);
+
+    document.getElementById('projectExportBtn').addEventListener('click', () => {
+      downloadJson(serializeProject(), 'playstore_project');
+    });
+
+    document.getElementById('manifestBtn').addEventListener('click', () => {
+      downloadJson(serializeManifest(), 'playstore_manifest');
+    });
+
+    elements.projectImportInput.addEventListener('change', async (event) => {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+
+      try {
+        await importProjectJson(file);
+      } catch (error) {
+        console.error(error);
+        window.alert(error.message || 'Could not import JSON project file.');
+      }
+    });
+
+    const overlayInputs = [
+      elements.bgStyle,
+      elements.bgColor1,
+      elements.bgColor2,
+      elements.titleText,
+      elements.subtitleText,
+      elements.badgeText,
+      elements.textColor,
+      elements.subtitleColor,
+      elements.badgeColor,
+      elements.scaleRange,
+      elements.shadowRange,
+      elements.radiusRange,
+      elements.safeAreaToggle,
+    ];
+
+    overlayInputs.forEach((input) => {
+      const eventType = input.type === 'range' || input.tagName === 'SELECT' ? 'input' : 'input';
+      input.addEventListener(eventType, () => {
+        writeOverlayFromControls();
+        renderPreview();
+        renderAssetList();
+      });
+      if (eventType !== 'change') {
+        input.addEventListener('change', () => {
+          writeOverlayFromControls();
+          renderPreview();
+          renderAssetList();
+          recordHistory();
+        });
+      }
+    });
+
+    const shapeInputs = [
+      elements.shapeKindSelect,
+      elements.shapeBlendModeSelect,
+      elements.shapeXRange,
+      elements.shapeYRange,
+      elements.shapeSizeRange,
+      elements.shapeRotateRange,
+      elements.shapeOpacityRange,
+      elements.shapeStrokeRange,
+      elements.shapeLayerShadowRange,
+      elements.shapeFillColor,
+      elements.shapeStrokeColor,
+      elements.shapeVisibleToggle,
+      elements.shapeLockedToggle,
+      elements.shapeFlipXToggle,
+      elements.shapeFlipYToggle,
+    ];
+
+    shapeInputs.forEach((input) => {
+      input.addEventListener('input', () => {
+        syncSelectedDecorationFromControls();
+        renderDecorationControls();
+        renderPreview();
+      });
+      input.addEventListener('change', () => {
+        syncSelectedDecorationFromControls();
+        renderDecorationControls();
+        renderPreview();
+        recordHistory();
+      });
+    });
+
+    elements.shapeLayerSelect.addEventListener('change', () => {
+      const asset = getSelectedAsset();
+      if (!asset) return;
+      const nextId = elements.shapeLayerSelect.value || null;
+      setSelectedDecorationId(asset, nextId);
+      renderDecorationControls();
+      renderPreview();
+    });
+
+    document.getElementById('addRectShapeBtn').addEventListener('click', () => addDecoration('rect'));
+    document.getElementById('addCircleShapeBtn').addEventListener('click', () => addDecoration('circle'));
+    document.getElementById('addTriangleShapeBtn').addEventListener('click', () => addDecoration('triangle'));
+    document.getElementById('addStarShapeBtn').addEventListener('click', () => addDecoration('star'));
+    document.getElementById('addDiamondShapeBtn').addEventListener('click', () => addDecoration('diamond'));
+    document.getElementById('addHexShapeBtn').addEventListener('click', () => addDecoration('hexagon'));
+    document.getElementById('addHeartIconBtn').addEventListener('click', () => addDecoration('heart'));
+    document.getElementById('addPlusIconBtn').addEventListener('click', () => addDecoration('plus'));
+    document.getElementById('addBoltIconBtn').addEventListener('click', () => addDecoration('bolt'));
+    document.getElementById('addCheckIconBtn').addEventListener('click', () => addDecoration('check'));
+    document.getElementById('addPlayIconBtn').addEventListener('click', () => addDecoration('play'));
+    document.getElementById('shapeAlignLeftBtn').addEventListener('click', () => alignSelectedDecoration('left'));
+    document.getElementById('shapeAlignCenterBtn').addEventListener('click', () => alignSelectedDecoration('center'));
+    document.getElementById('shapeAlignRightBtn').addEventListener('click', () => alignSelectedDecoration('right'));
+    document.getElementById('shapeAlignTopBtn').addEventListener('click', () => alignSelectedDecoration('top'));
+    document.getElementById('shapeAlignMiddleBtn').addEventListener('click', () => alignSelectedDecoration('middle'));
+    document.getElementById('shapeAlignBottomBtn').addEventListener('click', () => alignSelectedDecoration('bottom'));
+    document.getElementById('shapeNudgeLeftBtn').addEventListener('click', () => nudgeSelectedDecoration(-1, 0));
+    document.getElementById('shapeNudgeRightBtn').addEventListener('click', () => nudgeSelectedDecoration(1, 0));
+    document.getElementById('shapeNudgeUpBtn').addEventListener('click', () => nudgeSelectedDecoration(0, -1));
+    document.getElementById('shapeNudgeDownBtn').addEventListener('click', () => nudgeSelectedDecoration(0, 1));
+    document.getElementById('shapeRandomColorBtn').addEventListener('click', randomizeSelectedDecorationColors);
+    document.getElementById('removeShapeBtn').addEventListener('click', removeSelectedDecoration);
+    document.getElementById('duplicateShapeBtn').addEventListener('click', duplicateSelectedDecoration);
+    document.getElementById('shapeBringForwardBtn').addEventListener('click', () => reorderSelectedDecoration('forward'));
+    document.getElementById('shapeSendBackwardBtn').addEventListener('click', () => reorderSelectedDecoration('backward'));
+    document.getElementById('shapeMoveTopBtn').addEventListener('click', () => reorderSelectedDecoration('top'));
+    document.getElementById('shapeMoveBottomBtn').addEventListener('click', () => reorderSelectedDecoration('bottom'));
+    elements.undoBtn.addEventListener('click', performUndo);
+    elements.redoBtn.addEventListener('click', performRedo);
+    elements.duplicateLayerToTabBtn.addEventListener('click', duplicateSelectedLayerToTab);
+    elements.cloneOverlayToAllTabsBtn.addEventListener('click', cloneCurrentOverlayToAllTabs);
+    elements.autoFillTitlesBtn.addEventListener('click', autoFillTitlesFromBulk);
+    elements.autoNumberBadgesBtn.addEventListener('click', autoNumberBadgesForTab);
+    elements.clearTextForTabBtn.addEventListener('click', clearTextForCurrentTab);
+
+    const guideInputs = [
+      elements.showGridToggle,
+      elements.showCenterGuidesToggle,
+      elements.snapToGridToggle,
+      elements.gridSizeRange,
+    ];
+    guideInputs.forEach((input) => {
+      input.addEventListener('input', () => {
+        updateGuidesFromControls();
+        renderPreview();
+      });
+      input.addEventListener('change', () => {
+        updateGuidesFromControls();
+        renderPreview();
+        recordHistory();
+      });
+    });
+
+    elements.stylePreset.addEventListener('change', () => {
+      applyStylePresetToSelected(elements.stylePreset.value, true);
+      renderPreview();
+      renderAssetList();
+      recordHistory();
+    });
+
+    elements.alignRow.querySelectorAll('.chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        elements.alignRow.querySelectorAll('.chip').forEach((item) => item.classList.remove('active'));
+        chip.classList.add('active');
+        writeOverlayFromControls();
+        renderPreview();
+        recordHistory();
+      });
+    });
+
+    elements.frameRow.querySelectorAll('.chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        elements.frameRow.querySelectorAll('.chip').forEach((item) => item.classList.remove('active'));
+        chip.classList.add('active');
+        writeOverlayFromControls();
+        renderPreview();
+        recordHistory();
+      });
+    });
+
+    document.getElementById('applyPresetToTabBtn').addEventListener('click', applyStyleToCurrentTab);
+
+    elements.outputWidth.addEventListener('input', () => {
+      if (isMetadataTab()) return;
+      if (!elements.lockRatioToggle.checked) {
+        renderPreview();
+        return;
+      }
+
+      const currentWidth = parseInt(elements.outputWidth.value, 10);
+      if (!Number.isFinite(currentWidth)) return;
+      const ratio = state.output.ratio || 1;
+      const newHeight = Math.max(1, Math.round(currentWidth / ratio));
+      elements.outputHeight.value = newHeight;
+      renderPreview();
+    });
+
+    elements.outputHeight.addEventListener('input', () => {
+      if (isMetadataTab()) return;
+      if (!elements.lockRatioToggle.checked) {
+        renderPreview();
+        return;
+      }
+
+      const currentHeight = parseInt(elements.outputHeight.value, 10);
+      if (!Number.isFinite(currentHeight)) return;
+      const ratio = state.output.ratio || 1;
+      const newWidth = Math.max(1, Math.round(currentHeight * ratio));
+      elements.outputWidth.value = newWidth;
+      renderPreview();
+    });
+
+    elements.outputFormat.addEventListener('change', () => {
+      state.output.format = elements.outputFormat.value;
+      renderPreview();
+    });
+
+    elements.jpegQuality.addEventListener('input', () => {
+      state.output.jpegQuality = clampDimension(parseInt(elements.jpegQuality.value, 10), 65, 100);
+      elements.qualityOutput.textContent = `${state.output.jpegQuality}%`;
+    });
+
+    elements.lockRatioToggle.addEventListener('change', () => {
+      state.output.lockRatio = elements.lockRatioToggle.checked;
+    });
+
+    document.getElementById('useSpecSizeBtn').addEventListener('click', () => {
+      refreshOutputSizing(true);
+      renderPreview();
+    });
+
+    document.getElementById('exportSelectedBtn').addEventListener('click', exportSelected);
+    document.getElementById('exportTabBtn').addEventListener('click', exportCurrentTab);
+    elements.exportAllBtn.addEventListener('click', exportAllTabs);
+
+    elements.previewCanvas.addEventListener('pointerdown', handleCanvasPointerDown);
+    window.addEventListener('pointermove', handleCanvasPointerMove);
+    window.addEventListener('pointerup', handleCanvasPointerUp);
+    window.addEventListener('pointercancel', handleCanvasPointerUp);
+    window.addEventListener('keydown', handleDecorationHotkeys);
+  }
+
+  function renderAll() {
+    buildTabs();
+    renderWorkspace();
+    renderAssetList();
+    renderValidation();
+    renderCoverage();
+    refreshOutputSizing(false);
+    renderPreview();
+    syncGuideControls();
+    updateHistoryUi();
+  }
+
+  function initialize() {
+    buildMetadataFields();
+    setupCompactSections();
+    bindEvents();
+    renderAll();
+    resetHistory();
+  }
+
+  initialize();
+</script>
+</body>
+</html>
