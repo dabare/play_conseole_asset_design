@@ -1839,6 +1839,7 @@
       sectionOpen: {},
       toolboxOrder: {},
       draggingToolbox: null,
+      dragHandleArmed: null,
     },
   };
 
@@ -4779,6 +4780,24 @@ Included tabs:
         if (item.dataset.sortBound === '1') return;
         item.dataset.sortBound = '1';
 
+        const handleSelector = item.dataset.dragHandle || 'summary, .toolbox-card-head';
+        const handles = Array.from(item.querySelectorAll(handleSelector));
+        handles.forEach((handle) => {
+          if (handle.dataset.dragHandleBound === '1') return;
+          handle.dataset.dragHandleBound = '1';
+          handle.addEventListener('pointerdown', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (target && target.closest('.toolbox-collapse-btn')) return;
+            state.ui.dragHandleArmed = item;
+          });
+        });
+
+        item.addEventListener('pointerup', () => {
+          if (state.ui.dragHandleArmed === item) {
+            state.ui.dragHandleArmed = null;
+          }
+        });
+
         item.addEventListener('dragstart', (event) => {
           const target = event.target instanceof Element ? event.target : null;
           if (target && target.closest('.toolbox-collapse-btn')) {
@@ -4786,12 +4805,11 @@ Included tabs:
             return;
           }
 
-          const handleSelector = item.dataset.dragHandle || 'summary, .toolbox-card-head';
-          const handle = target ? target.closest(handleSelector) : null;
-          if (!handle || !item.contains(handle)) {
+          if (state.ui.dragHandleArmed !== item) {
             event.preventDefault();
             return;
           }
+          state.ui.dragHandleArmed = null;
 
           state.ui.draggingToolbox = item;
           item.classList.add('dragging');
@@ -4805,6 +4823,7 @@ Included tabs:
         item.addEventListener('dragend', () => {
           item.classList.remove('dragging');
           state.ui.draggingToolbox = null;
+          state.ui.dragHandleArmed = null;
           containers.forEach((node) => node.classList.remove('sort-drop-target'));
         });
       });
