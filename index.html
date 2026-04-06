@@ -245,6 +245,22 @@
     font-size: 0.86rem;
   }
 
+  [data-sortable="toolbox"] > [data-toolbox-item] {
+    transition: transform 140ms ease, opacity 140ms ease, box-shadow 140ms ease;
+  }
+
+  [data-sortable="toolbox"] > [data-toolbox-item].dragging {
+    opacity: 0.58;
+    transform: scale(0.99);
+    box-shadow: 0 14px 26px rgba(20, 33, 61, 0.16);
+  }
+
+  .sort-drop-target {
+    outline: 2px dashed #66a6cb;
+    outline-offset: 2px;
+    background: #f2f9ff;
+  }
+
   .compact-controls-shell {
     padding: 8px;
     background: #f8fbff;
@@ -272,6 +288,22 @@
     background: #f7fbff;
     border-bottom: 1px solid transparent;
     user-select: none;
+  }
+
+  .control-section[data-toolbox-item] > summary {
+    cursor: grab;
+  }
+
+  .control-section[data-toolbox-item] > summary:active {
+    cursor: grabbing;
+  }
+
+  .control-section[data-toolbox-item] > summary::before {
+    content: "⋮⋮";
+    font-size: 0.76rem;
+    letter-spacing: -0.08em;
+    color: #7d96ac;
+    margin-right: 8px;
   }
 
   .control-section > summary::-webkit-details-marker {
@@ -665,6 +697,83 @@
     gap: 10px;
   }
 
+  .toolbox-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toolbox-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: grab;
+    border-bottom: 1px solid #e1eaf2;
+    padding-bottom: 7px;
+  }
+
+  .toolbox-card-head:active {
+    cursor: grabbing;
+  }
+
+  .toolbox-card-head h2 {
+    margin: 0;
+  }
+
+  .toolbox-card-head .drag-hint {
+    font-size: 0.76rem;
+    letter-spacing: -0.08em;
+    color: #7d96ac;
+    margin-right: 6px;
+  }
+
+  .toolbox-head-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolbox-collapse-btn {
+    border: 1px solid #cfdae4;
+    background: #f7fbff;
+    color: #2f4e67;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+
+  .toolbox-collapse-btn:hover {
+    border-color: #b8cad9;
+    background: #eef6fc;
+  }
+
+  .toolbox-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .toolbox-card.collapsed {
+    gap: 0;
+  }
+
+  .toolbox-card.collapsed .toolbox-card-head {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .toolbox-card.collapsed .toolbox-card-body {
+    display: none;
+  }
+
+  .preview-card.collapsed {
+    min-height: unset;
+  }
+
   .canvas-shell {
     flex: 1;
     border: 1px solid #d6e0e8;
@@ -885,10 +994,18 @@
     <div class="content-grid">
       <section class="panel" id="leftPanel">
         <div id="assetWorkspace" class="panel">
-          <article class="card" id="specCard"></article>
+          <article class="card toolbox-card" id="specCard" data-remember-card-open>
+            <div class="toolbox-card-head">
+              <h2><span class="drag-hint">⋮⋮</span>Policy Snapshot</h2>
+              <div class="toolbox-head-actions">
+                <button class="toolbox-collapse-btn" type="button" data-card-toggle="specCard" aria-expanded="true">Collapse</button>
+              </div>
+            </div>
+            <div class="toolbox-card-body" id="specCardBody"></div>
+          </article>
 
-          <div class="panel-accordion" id="assetAccordion" data-accordion="single">
-            <details class="control-section" id="uploadSection" data-remember-open>
+          <div class="panel-accordion" id="assetAccordion" data-accordion="single" data-sortable="toolbox">
+            <details class="control-section" id="uploadSection" data-remember-open data-toolbox-item data-drag-handle="summary">
               <summary>Upload Assets</summary>
               <div class="section-body">
                 <p class="help-text" id="uploadHelp"></p>
@@ -904,7 +1021,7 @@
               </div>
             </details>
 
-            <details class="control-section" id="queueSection" data-remember-open>
+            <details class="control-section" id="queueSection" data-remember-open data-toolbox-item data-drag-handle="summary">
               <summary>Asset Queue</summary>
               <div class="section-body">
                 <p class="help-text" id="queueStatus"></p>
@@ -912,11 +1029,11 @@
               </div>
             </details>
 
-            <details class="control-section" id="artworkSection" data-remember-open open>
+            <details class="control-section" id="artworkSection" data-remember-open open data-toolbox-item data-drag-handle="summary">
               <summary>Artwork Controls</summary>
               <div class="section-body compact-controls-card compact-controls-shell">
-                <div id="artworkAccordion" class="accordion-stack" data-accordion="single">
-                  <details class="control-section" id="creativeBasicsSection" data-remember-open open>
+                <div id="artworkAccordion" class="accordion-stack" data-accordion="single" data-sortable="toolbox">
+                  <details class="control-section" id="creativeBasicsSection" data-remember-open open data-toolbox-item data-drag-handle="summary">
                     <summary>Creative Basics</summary>
                     <div class="section-body">
                       <div class="field-grid compact-field-grid">
@@ -926,6 +1043,14 @@
                             <option value="launch">Launch Pulse</option>
                             <option value="clean">Clean Commerce</option>
                             <option value="editorial">Editorial Prime</option>
+                            <option value="sunrise">Sunrise Bold</option>
+                            <option value="oceanic">Oceanic Signal</option>
+                            <option value="forest">Forest Spark</option>
+                            <option value="noir">Noir Focus</option>
+                            <option value="coral">Coral Story</option>
+                            <option value="arctic">Arctic Light</option>
+                            <option value="ember">Ember Contrast</option>
+                            <option value="citrus">Citrus Pop</option>
                           </select>
                         </div>
                         <div class="field">
@@ -1024,7 +1149,7 @@
                     </div>
                   </details>
 
-                  <details class="control-section" id="layerBuilderSection" data-remember-open>
+                  <details class="control-section" id="layerBuilderSection" data-remember-open data-toolbox-item data-drag-handle="summary">
                     <summary>Layer Builder</summary>
                     <div class="section-body">
                       <div class="field-grid compact-field-grid">
@@ -1172,7 +1297,7 @@
                     </div>
                   </details>
 
-                  <details class="control-section" id="layerToolsSection" data-remember-open>
+                  <details class="control-section" id="layerToolsSection" data-remember-open data-toolbox-item data-drag-handle="summary">
                     <summary>Layer Tools</summary>
                     <div class="section-body">
                       <div class="field-grid compact-field-grid">
@@ -1224,7 +1349,7 @@
                     </div>
                   </details>
 
-                  <details class="control-section" id="workflowSection" data-remember-open>
+                  <details class="control-section" id="workflowSection" data-remember-open data-toolbox-item data-drag-handle="summary">
                     <summary>Workflow & Automation</summary>
                     <div class="section-body">
                       <div class="field-grid compact-field-grid">
@@ -1285,7 +1410,7 @@
               </div>
             </details>
 
-            <details class="control-section" id="exportSection" data-remember-open>
+            <details class="control-section" id="exportSection" data-remember-open data-toolbox-item data-drag-handle="summary">
               <summary>Export</summary>
               <div class="section-body">
                 <div class="field-grid">
@@ -1331,8 +1456,8 @@
         </div>
 
         <div id="metadataWorkspace" class="panel hidden">
-          <div class="panel-accordion" id="metadataAccordion" data-accordion="single">
-            <details class="control-section" id="metadataFieldsSection" data-remember-open open>
+          <div class="panel-accordion" id="metadataAccordion" data-accordion="single" data-sortable="toolbox">
+            <details class="control-section" id="metadataFieldsSection" data-remember-open open data-toolbox-item data-drag-handle="summary">
               <summary>Store Listing Metadata</summary>
               <div class="section-body">
                 <p class="help-text">Track key listing copy and policy-sensitive details together with your graphics package.</p>
@@ -1340,14 +1465,14 @@
               </div>
             </details>
 
-            <details class="control-section" id="metadataPreviewSection" data-remember-open>
+            <details class="control-section" id="metadataPreviewSection" data-remember-open data-toolbox-item data-drag-handle="summary">
               <summary>Metadata Preview</summary>
               <div class="section-body">
                 <div class="metadata-preview" id="metadataPreview"></div>
               </div>
             </details>
 
-            <details class="control-section" id="metadataChecklistSection" data-remember-open>
+            <details class="control-section" id="metadataChecklistSection" data-remember-open data-toolbox-item data-drag-handle="summary">
               <summary>Policy Checklist</summary>
               <div class="section-body">
                 <div class="checklist" id="metadataChecklist"></div>
@@ -1357,24 +1482,45 @@
         </div>
       </section>
 
-      <section class="panel">
-        <article class="card preview-card">
-          <h2>Live Preview</h2>
-          <p class="help-text" id="previewCaption"></p>
-          <div class="canvas-shell" id="canvasShell">
-            <p class="empty-preview" id="emptyPreview">Upload an image in the current tab to start composing a polished Play Store graphic.</p>
-            <canvas id="previewCanvas" class="hidden"></canvas>
+      <section class="panel" id="rightPanel" data-sortable="toolbox">
+        <article class="card preview-card toolbox-card" id="previewCard" data-toolbox-item data-remember-card-open data-drag-handle=".toolbox-card-head">
+          <div class="toolbox-card-head">
+            <h2><span class="drag-hint">⋮⋮</span>Live Preview</h2>
+            <div class="toolbox-head-actions">
+              <button class="toolbox-collapse-btn" type="button" data-card-toggle="previewCard" aria-expanded="true">Collapse</button>
+            </div>
+          </div>
+          <div class="toolbox-card-body">
+            <p class="help-text" id="previewCaption"></p>
+            <div class="canvas-shell" id="canvasShell">
+              <p class="empty-preview" id="emptyPreview">Upload an image in the current tab to start composing a polished Play Store graphic.</p>
+              <canvas id="previewCanvas" class="hidden"></canvas>
+            </div>
           </div>
         </article>
 
-        <article class="card">
-          <h2>Validation</h2>
-          <div class="validation-list" id="validationList"></div>
+        <article class="card toolbox-card" id="validationCard" data-toolbox-item data-remember-card-open data-drag-handle=".toolbox-card-head">
+          <div class="toolbox-card-head">
+            <h2><span class="drag-hint">⋮⋮</span>Validation</h2>
+            <div class="toolbox-head-actions">
+              <button class="toolbox-collapse-btn" type="button" data-card-toggle="validationCard" aria-expanded="true">Collapse</button>
+            </div>
+          </div>
+          <div class="toolbox-card-body">
+            <div class="validation-list" id="validationList"></div>
+          </div>
         </article>
 
-        <article class="card">
-          <h2>Coverage Dashboard</h2>
-          <div class="coverage-list" id="coverageList"></div>
+        <article class="card toolbox-card" id="coverageCard" data-toolbox-item data-remember-card-open data-drag-handle=".toolbox-card-head">
+          <div class="toolbox-card-head">
+            <h2><span class="drag-hint">⋮⋮</span>Coverage Dashboard</h2>
+            <div class="toolbox-head-actions">
+              <button class="toolbox-collapse-btn" type="button" data-card-toggle="coverageCard" aria-expanded="true">Collapse</button>
+            </div>
+          </div>
+          <div class="toolbox-card-body">
+            <div class="coverage-list" id="coverageList"></div>
+          </div>
         </article>
       </section>
     </div>
@@ -1385,6 +1531,7 @@
   const MB = 1024 * 1024;
   const RATIO_TOLERANCE = 0.02;
   const SECTION_STATE_STORAGE_KEY = 'play_console_creative_sections_v2';
+  const TOOLBOX_ORDER_STORAGE_KEY = 'play_console_toolbox_order_v1';
 
   const ASSET_SPECS = [
     {
@@ -1536,6 +1683,110 @@
       shadow: 34,
       cornerRadius: 18,
     },
+    sunrise: {
+      bgStyle: 'gradient',
+      bgColor1: '#ff6b35',
+      bgColor2: '#f7b267',
+      textColor: '#ffffff',
+      subtitleColor: '#fff1e6',
+      badgeColor: '#2b2d42',
+      frameStyle: 'floating',
+      align: 'left',
+      scale: 90,
+      shadow: 35,
+      cornerRadius: 24,
+    },
+    oceanic: {
+      bgStyle: 'radial',
+      bgColor1: '#003049',
+      bgColor2: '#2a9d8f',
+      textColor: '#f7fcff',
+      subtitleColor: '#d8f0ff',
+      badgeColor: '#fcbf49',
+      frameStyle: 'floating',
+      align: 'left',
+      scale: 89,
+      shadow: 36,
+      cornerRadius: 22,
+    },
+    forest: {
+      bgStyle: 'gradient',
+      bgColor1: '#1b4332',
+      bgColor2: '#74c69d',
+      textColor: '#f1fff5',
+      subtitleColor: '#d4f4e2',
+      badgeColor: '#ffd166',
+      frameStyle: 'device',
+      align: 'left',
+      scale: 90,
+      shadow: 32,
+      cornerRadius: 24,
+    },
+    noir: {
+      bgStyle: 'solid',
+      bgColor1: '#111827',
+      bgColor2: '#1f2937',
+      textColor: '#f9fafb',
+      subtitleColor: '#d1d5db',
+      badgeColor: '#f59e0b',
+      frameStyle: 'raw',
+      align: 'center',
+      scale: 86,
+      shadow: 46,
+      cornerRadius: 14,
+    },
+    coral: {
+      bgStyle: 'radial',
+      bgColor1: '#264653',
+      bgColor2: '#e76f51',
+      textColor: '#fff8f2',
+      subtitleColor: '#ffe5d5',
+      badgeColor: '#2a9d8f',
+      frameStyle: 'floating',
+      align: 'right',
+      scale: 91,
+      shadow: 33,
+      cornerRadius: 26,
+    },
+    arctic: {
+      bgStyle: 'gradient',
+      bgColor1: '#0f4c81',
+      bgColor2: '#7fd8f7',
+      textColor: '#f7fcff',
+      subtitleColor: '#dff6ff',
+      badgeColor: '#ffd166',
+      frameStyle: 'device',
+      align: 'center',
+      scale: 93,
+      shadow: 30,
+      cornerRadius: 30,
+    },
+    ember: {
+      bgStyle: 'solid',
+      bgColor1: '#3b1f2b',
+      bgColor2: '#8c3a2b',
+      textColor: '#fff4ee',
+      subtitleColor: '#ffd9c2',
+      badgeColor: '#f6bd60',
+      frameStyle: 'raw',
+      align: 'left',
+      scale: 87,
+      shadow: 38,
+      cornerRadius: 16,
+    },
+    citrus: {
+      bgStyle: 'gradient',
+      bgColor1: '#006d77',
+      bgColor2: '#ffb703',
+      textColor: '#ffffff',
+      subtitleColor: '#fff6d9',
+      badgeColor: '#023047',
+      frameStyle: 'floating',
+      align: 'center',
+      scale: 90,
+      shadow: 28,
+      cornerRadius: 22,
+    },
   };
 
   const METADATA_FIELDS = [
@@ -1586,12 +1837,15 @@
         suppress: false,
       },
       sectionOpen: {},
+      toolboxOrder: {},
+      draggingToolbox: null,
     },
   };
 
   const elements = {
     tabStrip: document.getElementById('tabStrip'),
     specCard: document.getElementById('specCard'),
+    specCardBody: document.getElementById('specCardBody'),
     uploadHelp: document.getElementById('uploadHelp'),
     dropzoneCaption: document.getElementById('dropzoneCaption'),
     queueStatus: document.getElementById('queueStatus'),
@@ -1612,6 +1866,7 @@
     metadataWorkspace: document.getElementById('metadataWorkspace'),
     assetAccordion: document.getElementById('assetAccordion'),
     metadataAccordion: document.getElementById('metadataAccordion'),
+    rightPanel: document.getElementById('rightPanel'),
 
     stylePreset: document.getElementById('stylePreset'),
     bgStyle: document.getElementById('bgStyle'),
@@ -2695,9 +2950,8 @@
 
     const spec = getActiveSpec();
     const count = getAssetsForTab(spec.id).length;
-    elements.specCard.innerHTML = `
-      <h2>${spec.label} Policy Snapshot</h2>
-      <p class="help-text">${spec.note}</p>
+    elements.specCardBody.innerHTML = `
+      <p class="help-text"><strong>${spec.label}:</strong> ${spec.note}</p>
       <div class="spec-pill-grid">
         <div class="spec-pill"><b>Count</b><span>${spec.minCount}-${spec.maxCount}</span></div>
         <div class="spec-pill"><b>File Size</b><span>Up to ${spec.maxSizeMB} MB</span></div>
@@ -3767,12 +4021,13 @@
       return;
     }
 
-    const { width, height, format, quality } = getCurrentOutputConfig();
+    const { format, quality } = getCurrentOutputConfig();
+    const targetSize = getRecommendedSize(spec, selected);
     const canvas = document.createElement('canvas');
-    drawComposition(canvas, selected, spec, width, height);
+    drawComposition(canvas, selected, spec, targetSize.width, targetSize.height);
 
     const blob = await canvasToBlob(canvas, format, quality);
-    const safeName = sanitizeFileName(`${spec.id}_${getSelectedIndex() + 1}.${format === 'jpeg' ? 'jpg' : 'png'}`);
+    const safeName = sanitizeFileName(`${spec.id}_${getSelectedIndex() + 1}_${targetSize.width}x${targetSize.height}.${format === 'jpeg' ? 'jpg' : 'png'}`);
     downloadBlob(blob, safeName);
   }
 
@@ -3789,7 +4044,7 @@
       return;
     }
 
-    const { width, height, format, quality } = getCurrentOutputConfig();
+    const { format, quality } = getCurrentOutputConfig();
     const extension = format === 'jpeg' ? 'jpg' : 'png';
 
     if (assets.length === 1 || typeof window.JSZip === 'undefined') {
@@ -3798,10 +4053,11 @@
       }
       for (let index = 0; index < assets.length; index += 1) {
         const asset = assets[index];
+        const targetSize = getRecommendedSize(spec, asset);
         const canvas = document.createElement('canvas');
-        drawComposition(canvas, asset, spec, width, height);
+        drawComposition(canvas, asset, spec, targetSize.width, targetSize.height);
         const blob = await canvasToBlob(canvas, format, quality);
-        const fileName = sanitizeFileName(`${spec.id}_${index + 1}.${extension}`);
+        const fileName = sanitizeFileName(`${spec.id}_${index + 1}_${targetSize.width}x${targetSize.height}.${extension}`);
         downloadBlob(blob, fileName);
         await wait(240);
       }
@@ -3811,15 +4067,16 @@
     const zip = new window.JSZip();
     for (let index = 0; index < assets.length; index += 1) {
       const asset = assets[index];
+      const targetSize = getRecommendedSize(spec, asset);
       const canvas = document.createElement('canvas');
-      drawComposition(canvas, asset, spec, width, height);
+      drawComposition(canvas, asset, spec, targetSize.width, targetSize.height);
       const blob = await canvasToBlob(canvas, format, quality);
-      const fileName = sanitizeFileName(`${spec.id}_${index + 1}.${extension}`);
+      const fileName = sanitizeFileName(`${spec.id}_${index + 1}_${targetSize.width}x${targetSize.height}.${extension}`);
       zip.file(fileName, blob);
     }
 
     const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-    const zipName = sanitizeFileName(`${spec.id}_${width}x${height}.zip`);
+    const zipName = sanitizeFileName(`${spec.id}_policy_sizes.zip`);
     downloadBlob(zipBlob, zipName);
   }
 
@@ -3911,7 +4168,8 @@ Included tabs:
     const selected = getSelectedAsset();
     const overlay = selected ? selected.overlay : defaultOverlay();
 
-    elements.stylePreset.value = overlay.stylePreset || 'launch';
+    const presetKey = overlay.stylePreset || 'launch';
+    elements.stylePreset.value = STYLE_PRESETS[presetKey] ? presetKey : 'launch';
     elements.bgStyle.value = overlay.bgStyle;
     elements.bgColor1.value = overlay.bgColor1;
     elements.bgColor2.value = overlay.bgColor2;
@@ -4404,8 +4662,192 @@ Included tabs:
     }
   }
 
+  function loadToolboxOrderState() {
+    try {
+      const raw = window.localStorage.getItem(TOOLBOX_ORDER_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return {};
+      return parsed;
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveToolboxOrderState() {
+    try {
+      window.localStorage.setItem(TOOLBOX_ORDER_STORAGE_KEY, JSON.stringify(state.ui.toolboxOrder));
+    } catch (error) {
+      // Ignore storage failures (private mode/quota)
+    }
+  }
+
   function getDirectDetailsChildren(container) {
     return Array.from(container.children).filter((child) => child.tagName === 'DETAILS');
+  }
+
+  function getDirectToolboxChildren(container) {
+    return Array.from(container.children).filter((child) => child.hasAttribute('data-toolbox-item'));
+  }
+
+  function applySavedToolboxOrder(container) {
+    if (!container.id) return;
+    const savedOrder = state.ui.toolboxOrder[container.id];
+    if (!Array.isArray(savedOrder) || savedOrder.length === 0) return;
+
+    const children = getDirectToolboxChildren(container);
+    const byId = new Map(children.filter((item) => item.id).map((item) => [item.id, item]));
+    savedOrder.forEach((id) => {
+      const item = byId.get(id);
+      if (item) container.appendChild(item);
+    });
+
+    getDirectToolboxChildren(container).forEach((item) => {
+      if (!savedOrder.includes(item.id)) {
+        container.appendChild(item);
+      }
+    });
+  }
+
+  function persistToolboxOrder(container) {
+    if (!container.id) return;
+    state.ui.toolboxOrder[container.id] = getDirectToolboxChildren(container)
+      .map((item) => item.id)
+      .filter(Boolean);
+    saveToolboxOrderState();
+  }
+
+  function getToolboxAfterElement(container, clientY, draggingItem) {
+    const siblings = getDirectToolboxChildren(container).filter((item) => item !== draggingItem);
+    let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+
+    siblings.forEach((item) => {
+      const box = item.getBoundingClientRect();
+      const offset = clientY - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        closest = { offset, element: item };
+      }
+    });
+
+    return closest.element;
+  }
+
+  function setCardCollapsed(card, collapsed, persist = true) {
+    card.classList.toggle('collapsed', collapsed);
+    const toggle = card.querySelector('.toolbox-collapse-btn');
+    if (toggle) {
+      toggle.textContent = collapsed ? 'Expand' : 'Collapse';
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+    }
+
+    if (persist && card.hasAttribute('data-remember-card-open') && card.id) {
+      state.ui.sectionOpen[card.id] = !collapsed;
+      saveSectionState();
+    }
+  }
+
+  function setupCardToolboxes() {
+    const cards = Array.from(document.querySelectorAll('.toolbox-card[data-remember-card-open][id]'));
+    cards.forEach((card) => {
+      if (Object.prototype.hasOwnProperty.call(state.ui.sectionOpen, card.id)) {
+        setCardCollapsed(card, !state.ui.sectionOpen[card.id], false);
+      } else {
+        state.ui.sectionOpen[card.id] = !card.classList.contains('collapsed');
+      }
+
+      const toggle = card.querySelector('.toolbox-collapse-btn');
+      if (!toggle || toggle.dataset.bound === '1') return;
+      toggle.dataset.bound = '1';
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setCardCollapsed(card, !card.classList.contains('collapsed'));
+      });
+    });
+    saveSectionState();
+  }
+
+  function setupSortableToolboxes() {
+    state.ui.toolboxOrder = loadToolboxOrderState();
+    const containers = Array.from(document.querySelectorAll('[data-sortable="toolbox"]'));
+
+    containers.forEach((container) => {
+      applySavedToolboxOrder(container);
+      const children = getDirectToolboxChildren(container);
+      children.forEach((item) => {
+        item.setAttribute('draggable', 'true');
+        if (item.dataset.sortBound === '1') return;
+        item.dataset.sortBound = '1';
+
+        item.addEventListener('dragstart', (event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          if (target && target.closest('.toolbox-collapse-btn')) {
+            event.preventDefault();
+            return;
+          }
+
+          const handleSelector = item.dataset.dragHandle || 'summary, .toolbox-card-head';
+          const handle = target ? target.closest(handleSelector) : null;
+          if (!handle || !item.contains(handle)) {
+            event.preventDefault();
+            return;
+          }
+
+          state.ui.draggingToolbox = item;
+          item.classList.add('dragging');
+
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', item.id || 'toolbox-item');
+          }
+        });
+
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          state.ui.draggingToolbox = null;
+          containers.forEach((node) => node.classList.remove('sort-drop-target'));
+        });
+      });
+
+      if (container.dataset.sortContainerBound === '1') return;
+      container.dataset.sortContainerBound = '1';
+
+      container.addEventListener('dragenter', (event) => {
+        const draggingItem = state.ui.draggingToolbox;
+        if (!draggingItem || draggingItem.parentElement !== container) return;
+        event.preventDefault();
+        container.classList.add('sort-drop-target');
+      });
+
+      container.addEventListener('dragleave', (event) => {
+        if (!container.contains(event.relatedTarget)) {
+          container.classList.remove('sort-drop-target');
+        }
+      });
+
+      container.addEventListener('dragover', (event) => {
+        const draggingItem = state.ui.draggingToolbox;
+        if (!draggingItem || draggingItem.parentElement !== container) return;
+
+        event.preventDefault();
+        const afterElement = getToolboxAfterElement(container, event.clientY, draggingItem);
+        if (!afterElement) {
+          container.appendChild(draggingItem);
+          return;
+        }
+        if (afterElement !== draggingItem) {
+          container.insertBefore(draggingItem, afterElement);
+        }
+      });
+
+      container.addEventListener('drop', (event) => {
+        const draggingItem = state.ui.draggingToolbox;
+        if (!draggingItem || draggingItem.parentElement !== container) return;
+        event.preventDefault();
+        container.classList.remove('sort-drop-target');
+        persistToolboxOrder(container);
+      });
+    });
   }
 
   function enforceSingleOpenAccordion(container) {
@@ -4423,6 +4865,8 @@ Included tabs:
 
   function setupCompactSections() {
     state.ui.sectionOpen = loadSectionState();
+    setupCardToolboxes();
+    setupSortableToolboxes();
 
     const rememberedSections = Array.from(document.querySelectorAll('details[data-remember-open][id]'));
     rememberedSections.forEach((section) => {
